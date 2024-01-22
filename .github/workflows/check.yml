@@ -1,0 +1,56 @@
+name: Checks
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+env:
+  TMP_EMAIL_DIR: /tmp/tmp_email_dir
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install poetry
+          python -m poetry install --with dev
+      - name: Run code quality checks
+        run: |
+          poetry run ruff format --diff src
+          poetry run ruff check --diff src
+          poetry run mypy src
+      - name: Test with pytest
+        run: |
+          poetry run pytest --cov=pocketbase
+          poetry run coverage report -m --skip-covered --skip-empty
+          export TOTAL=$(poetry run coverage report --precision=1 --format total)
+          echo "COVERAGE=${TOTAL}%" >> $GITHUB_ENV
+          echo "TOTAL=${TOTAL}" >> $GITHUB_ENV
+          poetry run coverage report --format total 
+      - name: Coverage badge
+        if: github.ref == 'refs/heads/main'
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.GIST_SECRET }}
+          gistID: a41c81ee9f5d3944d2f9946c3eae4aae
+          filename: coverage.json
+          style: for-the-badge
+          label: Coverage
+          message: ${{ env.COVERAGE }}
+          valColorRange: ${{ env.TOTAL }}
+          maxColorRange: 90
+          minColorRange: 50
