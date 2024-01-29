@@ -71,3 +71,7 @@ cython_debug/
 # Caches
 .cache
 .*_cache
+
+# IDEs
+.vscode
+.idea
