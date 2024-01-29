@@ -1,6 +1,10 @@
 <a name="readme-top"></a>
 
-![Static Badge](https://img.shields.io/badge/status-beta-blue?style=for-the-badge&label=status) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://opensource.org/licenses/MIT) [![Checks status](https://img.shields.io/github/actions/workflow/status/thijsmie/pocketbase-async/checks?style=for-the-badge&label=Checks)](https://github.com/thijsmie/pocketbase-async/actions) ![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/thijsmie/a41c81ee9f5d3944d2f9946c3eae4aae/raw/covbadge.json&style=for-the-badge) ![GitHub Release](https://img.shields.io/github/v/release/thijsmie/pocketbase-async?style=for-the-badge)
+[![Static Badge](https://img.shields.io/badge/status-beta-blue?style=for-the-badge&label=status)](https://github.com/thijsmie/pocketbase-async)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://github.com/thijsmie/pocketbase-async/blob/main/LICENSE.txt)
+[![Checks status](https://img.shields.io/github/actions/workflow/status/thijsmie/pocketbase-async/checks?style=for-the-badge&label=Checks)](https://github.com/thijsmie/pocketbase-async/actions)
+[![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/thijsmie/a41c81ee9f5d3944d2f9946c3eae4aae/raw/coverage.json)](https://github.com/thijsmie/pocketbase-async/actions)
+[![GitHub Release](https://img.shields.io/github/v/release/thijsmie/pocketbase-async?style=for-the-badge)](https://github.com/thijsmie/pocketbase-async/releases)
 
 <div align="center">
   <hr/>
