@@ -5,13 +5,11 @@ on:
     branches: ["main"]
   pull_request:
     branches: ["main"]
-env:
-  TMP_EMAIL_DIR: /tmp/tmp_email_dir
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: main
     strategy:
       fail-fast: false
       matrix:
@@ -42,7 +40,7 @@ jobs:
           echo "TOTAL=${TOTAL}" >> $GITHUB_ENV
           poetry run coverage report --format total 
       - name: Coverage badge
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && matrix.python-version == '3.12'
         uses: schneegans/dynamic-badges-action@v1.7.0
         with:
           auth: ${{ secrets.GIST_SECRET }}
