@@ -9,12 +9,12 @@
 <div align="center">
   <hr/>
   <a href="https://github.com/thijsmie/pocketbase-async">
-    <img src="images/logo.svg" alt="Logo" width="80" height="80">
+    <img src="https://raw.githubusercontent.com/thijsmie/pocketbase-async/main/images/logo.svg" alt="Logo" width="80" height="80">
   </a>
   <h3 align="center">pocketbase-async</h3>
 
   <p align="center">
-    An async Python 3.11+ PocketBase SDK 
+    An async Python 3.11+ PocketBase SDK
     <hr/>
     <a href="https://github.com/thijsmie/pocketbase-async"><strong>Repository</strong></a>
     <br />

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pocketbase-async"
-version = "0.8.1"
+version = "0.8.2"
 description = "Async pocketbase SDK for Python"
 repository = "https://github.com/thijsmie/pocketbase-async"
 authors = ["Thijs Miedema <opensource@tmiedema.com>"]
