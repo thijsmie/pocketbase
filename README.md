@@ -24,21 +24,6 @@
   </p>
 </div>
 
-
-<!-- TABLE OF CONTENTS -->
-<details>
-  <summary>Table of Contents</summary>
-  <ol>
-    <li><a href="#about">About</a></li>
-    <li><a href="#installation">Installation</a></li></li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#attributions">Attributions</a></li>
-  </ol>
-</details>
-
 ## About
 
 PocketBase is an amazing tool to have in your developers backpack for a quick backend for your project. I found it pleasant to work with in Python but Vaphes existing Python SDK is in sync code while most of my application development is async these days. I started with a fork of Vaphes' SDK and tried to add async support but I gave up quite quickly and just started from scratch. You see the results here.
@@ -54,7 +39,9 @@ poetry add pocketbase-async
 
 ## Usage
 
-The API is mostly the same as the official JS SDK and the Vaphes Python SDK, with some exceptions. Authentication methods are namespaced under an extra `.auth`. More info to come.
+The API is mostly the same as the official JS SDK and the Vaphes Python SDK, with some exceptions. Authentication methods are namespaced under an extra `.auth`. There are some examples to help you along. More info to come.
+
+- [View the examples](https://github.com/thijsmie/pocketbase-async/tree/main/examples)
 
 ## Roadmap
 
@@ -71,7 +58,6 @@ Don't forget to give the project a star! Thanks again!
 3. Commit your changes (`git commit -m 'feat: Add some AmazingFeature'`)
 4. Push to the pranch (`git push -u origin feat/some-nice-feature`)
 5. Open a pull request
-
 
 ## License
 

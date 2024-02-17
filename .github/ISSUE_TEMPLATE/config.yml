@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Discussions
+    url: https://github.com/thijsmie/pocketbase-async/discussions
+    about: Here you can freely ask questions and discuss things.
+  - name: Security Guidelines
+    url: https://github.com/thijsmie/pocketbase-async/blob/main/SECURITY.md
+    about: Please read this to report security vulnerabilities.
