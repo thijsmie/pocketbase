@@ -6,7 +6,7 @@ from pocketbase.models.dtos import AdminModel
 from pocketbase.models.errors import PocketbaseError
 
 
-def test_login(admin_client: PocketBase, admin: tuple[str, str]):
+async def test_login(admin_client: PocketBase, admin: tuple[str, str]):
     assert admin_client._inners.auth._authority["email"] == admin[0]
 
 
