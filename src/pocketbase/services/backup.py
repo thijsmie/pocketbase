@@ -3,7 +3,7 @@ from urllib.parse import quote
 
 from httpx._types import FileTypes
 
-from pocketbase.models.errors import PocketbaseError
+from pocketbase.models.errors import PocketBaseError
 from pocketbase.models.options import CommonOptions, SendOptions
 from pocketbase.services.base import Service
 
@@ -70,7 +70,7 @@ class BackupService(Service):
         response = await self._send_raw(f"/{quote(key)}", send_options)
 
         if not 200 >= response.status_code < 300:
-            raise PocketbaseError(url=str(response.url), status=response.status_code, data=response.json())
+            raise PocketBaseError(url=str(response.url), status=response.status_code, data=response.json())
 
         return response.content
 

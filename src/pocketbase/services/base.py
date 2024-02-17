@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from httpx import Request, Response
 
-from pocketbase.models.errors import PocketbaseError
+from pocketbase.models.errors import PocketBaseError
 from pocketbase.models.options import SendOptions
 from pocketbase.utils.types import JsonType, SendableFiles, transform
 
@@ -36,7 +36,7 @@ class Service:
         data = response.json()
 
         if response.status_code >= 400:
-            raise PocketbaseError(url=str(response.url), status=response.status_code, data=data)
+            raise PocketBaseError(url=str(response.url), status=response.status_code, data=data)
 
         return data
 
@@ -45,7 +45,7 @@ class Service:
 
         if response.status_code >= 400:
             data = response.json()
-            raise PocketbaseError(url=str(response.url), status=response.status_code, data=data)
+            raise PocketBaseError(url=str(response.url), status=response.status_code, data=data)
 
     def _init_send(self, path: str, options: SendOptions) -> Request:
         headers = self._pb.headers()
