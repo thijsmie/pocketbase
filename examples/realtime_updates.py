@@ -21,7 +21,7 @@ async def realtime_updates():
     pb = PocketBase("http://localhost:8123")
 
     # Authenticate as an admin
-    await pb.admin.auth.with_password(email=ADMIN_EMAIL, password=ADMIN_PASSWORD)
+    await pb.admins.auth.with_password(email=ADMIN_EMAIL, password=ADMIN_PASSWORD)
 
     # Subscribe to all events
     unsubscribe = await pb.realtime.subscribe(
