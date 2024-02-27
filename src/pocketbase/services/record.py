@@ -30,9 +30,14 @@ class RecordService(CrudService[Record]):
         self, callback: Callback, record_id: str | None = None, options: CommonOptions | None = None
     ) -> Callable[[], Awaitable[None]]:
         if record_id:
-            return await self._pb.realtime.subscribe(f"{self._collection}/{record_id}", callback, options)
+            # Subscribe to a specific record ID or all records using "*"
+            await self._pb.realtime.subscribe(
+                f"{self._collection}/{record_id}" if record_id != "*" else self._collection,
+                callback, options
+            )
         else:
-            return await self._pb.realtime.subscribe(self._collection, callback, options)
+            # No record ID provided, handle the case explicitly (e.g., raise an error)
+            raise ValueError("Invalid record_id: None")
 
 
 class RecordAuthService(Service):
