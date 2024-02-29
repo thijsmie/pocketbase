@@ -51,9 +51,6 @@ class RecordService(CrudService[Record]):
             f"{self._collection}/{record_id}", callback, options
         )
 
-        # Return a function to unsubscribe from the record
-        return lambda: self._pb.realtime.unsubscribe(f"{self._collection}/{record_id}")
-
 
     async def subscribe_all(
         self, callback: Callback, options: CommonOptions | None = None
@@ -70,9 +67,6 @@ class RecordService(CrudService[Record]):
         """
 
         await self._pb.realtime.subscribe(self._collection, callback, options)
-
-        # Return a function to unsubscribe from all records
-        return lambda: self._pb.realtime.unsubscribe(self._collection)
 
 
 
