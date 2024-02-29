@@ -36,9 +36,8 @@ async def realtime_updates():
         col = pb.collection(COLLECTION_NAME)
 
         # Subscribe to Realtime events for the specific record ID in the collection
-        unsubscribe = await col.subscribe(
-            callback=callback,
-            record_id="*"
+        unsubscribe = await col.subscribe_all(
+            callback=callback
             )
 
         # Infinite loop to wait for events (adjusted from the second snippet)

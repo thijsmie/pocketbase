@@ -27,17 +27,53 @@ class RecordService(CrudService[Record]):
         return self._auth
 
     async def subscribe(
-        self, callback: Callback, record_id: str | None = None, options: CommonOptions | None = None
+        self,
+        callback: Callback,
+        record_id: str,
+        options: CommonOptions | None = None,
     ) -> Callable[[], Awaitable[None]]:
-        if record_id:
-            # Subscribe to a specific record ID or all records using "*"
-            await self._pb.realtime.subscribe(
-                f"{self._collection}/{record_id}" if record_id != "*" else self._collection,
-                callback, options
-            )
-        else:
-            # No record ID provided, handle the case explicitly (e.g., raise an error)
-            raise ValueError("Invalid record_id: None")
+        """
+        Subscribes to a specific record identified by `record_id`.
+
+        Args:
+            callback: Function to be called when updates occur for the record.
+            record_id: The ID of the record to subscribe to.
+            options: Additional options for the subscription (optional).
+
+        Raises:
+            ValueError: If `record_id` is empty or None.
+        """
+
+        if not record_id:
+            raise ValueError("Invalid record_id: cannot be empty or None")
+
+        await self._pb.realtime.subscribe(
+            f"{self._collection}/{record_id}", callback, options
+        )
+
+        # Return a function to unsubscribe from the record
+        return lambda: self._pb.realtime.unsubscribe(f"{self._collection}/{record_id}")
+
+
+    async def subscribe_all(
+        self, callback: Callback, options: CommonOptions | None = None
+    ) -> Callable[[], Awaitable[None]]:
+        """
+        Subscribes to all records in the current collection.
+
+        Args:
+            callback: Function to be called when updates occur for any record.
+            options: Additional options for the subscription (optional).
+
+        Returns:
+            A function to unsubscribe from all records.
+        """
+
+        await self._pb.realtime.subscribe(self._collection, callback, options)
+
+        # Return a function to unsubscribe from all records
+        return lambda: self._pb.realtime.unsubscribe(self._collection)
+
 
 
 class RecordAuthService(Service):
