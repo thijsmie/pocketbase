@@ -47,10 +47,7 @@ class RecordService(CrudService[Record]):
         if not record_id:
             raise ValueError("Invalid record_id: cannot be empty or None")
 
-        await self._pb.realtime.subscribe(
-            f"{self._collection}/{record_id}", callback, options
-        )
-
+        return await self._pb.realtime.subscribe(f"{self._collection}/{record_id}", callback, options)
 
     async def subscribe_all(
         self, callback: Callback, options: CommonOptions | None = None
@@ -66,8 +63,7 @@ class RecordService(CrudService[Record]):
             A function to unsubscribe from all records.
         """
 
-        await self._pb.realtime.subscribe(self._collection, callback, options)
-
+        return await self._pb.realtime.subscribe(self._collection, callback, options)
 
 
 class RecordAuthService(Service):
