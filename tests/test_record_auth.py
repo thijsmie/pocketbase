@@ -8,7 +8,7 @@ from pocketbase.models.errors import PocketbaseError
 
 @pytest.fixture
 async def user(admin_client: PocketBase) -> tuple[Record, str, str]:
-    email = "%s@%s.com" % (uuid4().hex[:16], uuid4().hex[:16])
+    email = f"{uuid4().hex[:16]}@{uuid4().hex[:16]}.com"
     password = uuid4().hex
     await admin_client.collection("users").create(
         {

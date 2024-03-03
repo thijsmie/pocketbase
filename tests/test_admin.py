@@ -6,12 +6,12 @@ from pocketbase.models.dtos import AdminModel
 from pocketbase.models.errors import PocketbaseError
 
 
-def test_login(admin_client: PocketBase, admin: tuple[str, str]):
+async def test_login(admin_client: PocketBase, admin: tuple[str, str]):
     assert admin_client._inners.auth._authority["email"] == admin[0]
 
 
 async def create_admin(admin_client: PocketBase) -> AdminModel:
-    email = "%s@%s.com" % (uuid4().hex[:16], uuid4().hex[:16])
+    email = f"{uuid4().hex[:16]}@{uuid4().hex[:16]}.com"
     password = uuid4().hex
     return (
         await admin_client.admins.create(

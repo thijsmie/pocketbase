@@ -1,5 +1,6 @@
 import secrets
 import socket
+from collections.abc import Generator
 from contextlib import closing
 from pathlib import Path
 from subprocess import DEVNULL, Popen
@@ -34,16 +35,16 @@ def port() -> int:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def process(admin: tuple[str, str], port: int, executable: Path, tmpdir_factory) -> Popen:
-    dir = tmpdir_factory.mktemp("data")
+def process(admin: tuple[str, str], port: int, executable: Path, tmpdir_factory) -> Generator[Popen, None, None]:
+    directory = tmpdir_factory.mktemp("data")
     # Adding a --dev in the command below can be helpful when debugging tests
     p = Popen(
-        args=["_", "serve", f"--dir={dir}", f"--http=127.0.0.1:{port}"],
+        args=["_", "serve", f"--dir={directory}", f"--http=127.0.0.1:{port}"],
         executable=executable,
     )
     sleep(0.3)
     Popen(
-        args=["_", "admin", "create", admin[0], admin[1], f"--dir={dir}"],
+        args=["_", "admin", "create", admin[0], admin[1], f"--dir={directory}"],
         executable=executable,
         stdout=DEVNULL,
         stderr=DEVNULL,
