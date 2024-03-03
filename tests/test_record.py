@@ -162,7 +162,7 @@ async def test_update(admin_client: PocketBase, collection: CollectionModel):
     assert updated["created"] == record["created"]
 
 
-async def test_update(admin_client: PocketBase, collection: CollectionModel):
+async def test_delete(admin_client: PocketBase, collection: CollectionModel):
     col = admin_client.collection(collection["id"])
     record = await col.create({"title": "a"})
     await col.delete(record["id"])
@@ -172,7 +172,7 @@ async def test_update(admin_client: PocketBase, collection: CollectionModel):
     assert exc.value.status == 404
 
 
-async def test_update(admin_client: PocketBase, collection: CollectionModel):
+async def test_get_one(admin_client: PocketBase, collection: CollectionModel):
     col = admin_client.collection(collection["id"])
     with pytest.raises(PocketbaseError) as exc:
         await col.get_one("blblblbllb")

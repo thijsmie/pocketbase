@@ -28,8 +28,8 @@ jobs:
           python -m poetry install --with dev
       - name: Run code quality checks
         run: |
-          poetry run ruff format --diff src
-          poetry run ruff check --diff src
+          poetry run ruff format --diff src tests examples
+          poetry run ruff check --diff src tests
           poetry run mypy src
       - name: Test with pytest
         run: |
@@ -38,7 +38,7 @@ jobs:
           export TOTAL=$(poetry run coverage report --precision=1 --format total)
           echo "COVERAGE=${TOTAL}%" >> $GITHUB_ENV
           echo "TOTAL=${TOTAL}" >> $GITHUB_ENV
-          poetry run coverage report --format total 
+          poetry run coverage report --format total
       - name: Coverage badge
         if: github.ref == 'refs/heads/main' && matrix.python-version == '3.12'
         uses: schneegans/dynamic-badges-action@v1.7.0

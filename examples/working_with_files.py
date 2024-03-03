@@ -1,5 +1,4 @@
-from pocketbase import PocketBase, PocketbaseError, FileUpload
-
+from pocketbase import FileUpload, PocketBase, PocketbaseError
 
 CONNECTION_URL = "http://localhost:8123"
 ADMIN_EMAIL = "test@example.com"
@@ -36,12 +35,12 @@ async def working_with_files():
     except PocketbaseError:
         # Collection probably exists
         pass
-    
+
     # Get the collection instance we can work with
     collection = pb.collection("working_with_files")
 
     # Upload a file
-    # Note that FileUpload takes _tuples_, this is because you can have 
+    # Note that FileUpload takes _tuples_, this is because you can have
     # fields that take multiple files. They are structed as:
     #   tuple(filename, content) or tuple(filename, content, mimetype)
     # Content can be anything file-like such as bytes, a string, a file descriptor from
@@ -49,7 +48,7 @@ async def working_with_files():
     record = await collection.create(
         params={
             "name": "important_data.txt",
-            "file": FileUpload(("important_data.txt", b"The answer to life, the universe and everything is 42."))
+            "file": FileUpload(("important_data.txt", b"The answer to life, the universe and everything is 42.")),
         }
     )
 
@@ -58,26 +57,23 @@ async def working_with_files():
     #       but whatever PocketBase decided to call it for storage. You
     #       can always find it back inside the database record.
     file = await pb.files.download_file(
-        collection=record['collectionName'],
-        record_id=record['id'],
-        filename=record['file'] 
+        collection=record["collectionName"], record_id=record["id"], filename=record["file"]
     )
 
     print(file)
 
     # Update the file
     updated = await collection.update(
-        record_id=record['id'],
-        params={'file': FileUpload(("important_question.txt", b"But what is the question?"))}
+        record_id=record["id"], params={"file": FileUpload(("important_question.txt", b"But what is the question?"))}
     )
 
     print(updated)
 
     # Clean up after ourselves
-    await collection.delete(record_id=record['id'])
-
+    await collection.delete(record_id=record["id"])
 
 
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(working_with_files())

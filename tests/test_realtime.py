@@ -29,7 +29,7 @@ async def test_realtime(admin_client: PocketBase) -> CollectionModel:
         event_payload = event
         event_trigger.set()
 
-    unsub = await col.subscribe(test)
+    unsub = await col.subscribe_all(callback=test)
     record = await col.create({"title": "hi"})
 
     async with asyncio.timeout(0.5):
@@ -41,7 +41,7 @@ async def test_realtime(admin_client: PocketBase) -> CollectionModel:
     await unsub()
 
     event_trigger.clear()
-    unsub = await col.subscribe(test, record_id=record["id"])
+    unsub = await col.subscribe(callback=test, record_id=record["id"])
     record = await col.update(record["id"], {"title": "ho"})
 
     async with asyncio.timeout(0.5):

@@ -1,6 +1,5 @@
 from pocketbase import PocketBase, PocketbaseError
 
-
 CONNECTION_URL = "http://localhost:8123"
 ADMIN_EMAIL = "test@example.com"
 ADMIN_PASSWORD = "test"
@@ -34,7 +33,7 @@ async def hello_world():
         # You probably ran this example before, and the collection already exists!
         # No problem, we'll continue as normal :)
         pass
-    
+
     # Get the collection instance we can work with
     collection = pb.collection("hello_world")
 
@@ -45,25 +44,20 @@ async def hello_world():
     first = await collection.get_first()
     list_records = await collection.get_list(page=1, per_page=10)
     all_records = await collection.get_full_list()
-    one = await collection.get_one(record_id=first['id'])
+    one = await collection.get_one(record_id=first["id"])
 
     print(one)
 
     # Update a record
-    updated = await collection.update(
-        record_id=one['id'],
-        params={'contents': "Good to see you again!"}
-    )
+    updated = await collection.update(record_id=one["id"], params={"contents": "Good to see you again!"})
 
     print(updated)
 
     # Delete a record
-    await collection.delete(
-        record_id=one['id']
-    )
-
+    await collection.delete(record_id=one["id"])
 
 
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(hello_world())

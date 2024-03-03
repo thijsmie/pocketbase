@@ -1,8 +1,8 @@
+import asyncio
+from datetime import datetime
+
 from pocketbase import PocketBase
 from pocketbase.services.realtime import RealtimeEvent
-from datetime import datetime
-import asyncio
-
 
 CONNECTION_URL = "http://localhost:8123"
 ADMIN_EMAIL = "test@example.com"
@@ -36,9 +36,7 @@ async def realtime_updates():
         col = pb.collection(COLLECTION_NAME)
 
         # Subscribe to Realtime events for the specific record ID in the collection
-        unsubscribe = await col.subscribe_all(
-            callback=callback
-            )
+        unsubscribe = await col.subscribe_all(callback=callback)
 
         # Infinite loop to wait for events (adjusted from the second snippet)
         while True:

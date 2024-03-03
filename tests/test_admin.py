@@ -11,7 +11,7 @@ async def test_login(admin_client: PocketBase, admin: tuple[str, str]):
 
 
 async def create_admin(admin_client: PocketBase) -> AdminModel:
-    email = "%s@%s.com" % (uuid4().hex[:16], uuid4().hex[:16])
+    email = f"{uuid4().hex[:16]}@{uuid4().hex[:16]}.com"
     password = uuid4().hex
     return (
         await admin_client.admins.create(
