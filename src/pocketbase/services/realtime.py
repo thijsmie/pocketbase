@@ -5,22 +5,18 @@ from asyncio.tasks import Task
 from collections import defaultdict
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
-from typing import TYPE_CHECKING, Literal, TypedDict
+from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
 
+from httpx import ReadError
 from httpx_sse import aconnect_sse
 
-from pocketbase.models.dtos import Record
+from pocketbase.models.dtos import RealtimeEvent
 from pocketbase.models.options import CommonOptions
 from pocketbase.services.base import Service
 
 if TYPE_CHECKING:
     from pocketbase.client import PocketBase, PocketBaseInners
-
-
-class RealtimeEvent(TypedDict):
-    action: Literal["create", "update", "delete"]
-    record: Record
 
 
 Callback = Callable[[RealtimeEvent], Awaitable[None]]
@@ -46,30 +42,46 @@ class RealtimeService(Service):
         await sentinel.wait()
 
     async def _make_connection(self, sentinel: asyncio.Event) -> None:
+        headers: dict[str, Any] = {}
+        last_event_id: Any | None = None
         try:
-            async with aconnect_sse(self._in.client, "GET", self.__base_sub_path__, timeout=900) as sse:
-                async for message in sse.aiter_sse():
-                    if message.event == "PB_CONNECT":
-                        self._client_id = message.id
-                        await self._transmit_subscriptions()
-                        sentinel.set()
-                    elif message.event in self._subscriptions:
-                        for callback in self._subscriptions[message.event]:
-                            try:
-                                await callback(message.json())
-                            except:  # noqa: E722
-                                # We never want any exception to break the realtime handler.
-                                logging.exception("Unhandled exception in realtime event handler")
+            while True:
+                try:
+                    async with aconnect_sse(
+                        self._in.client, "GET", self.__base_sub_path__, headers=headers, timeout=900
+                    ) as sse:
+                        async for message in sse.aiter_sse():
+                            if message.event == "PB_CONNECT":
+                                self._client_id = message.id
+                                await self._transmit_subscriptions(force=True)
+                                sentinel.set()
+                                continue
+
+                            last_event_id = message.id
+
+                            if message.event in self._subscriptions:
+                                for callback in self._subscriptions[message.event]:
+                                    try:
+                                        await callback(message.json())
+                                    except:  # noqa: E722
+                                        # We never want any exception to break the realtime handler.
+                                        logging.exception("Unhandled exception in realtime event handler")
+                except (ReadError, asyncio.TimeoutError):
+                    logging.debug("Connection lost, reconnecting automatically")
+                    if last_event_id:
+                        headers["Last-Event-ID"] = last_event_id
+
         finally:
             # Disconnected, reset to plain state.
+            logging.exception("Connection to realtime endpoint lost")
             self._connection = None
             self._client_id = None
             self._last_transmit = set()
             sentinel.set()
 
-    async def _transmit_subscriptions(self) -> None:
+    async def _transmit_subscriptions(self, force: bool = False) -> None:
         to_transmit = set(self._subscriptions.keys())
-        if to_transmit == self._last_transmit or not self._client_id:
+        if not force and (to_transmit == self._last_transmit or not self._client_id):
             return
 
         self._last_transmit = to_transmit

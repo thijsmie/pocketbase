@@ -1,4 +1,4 @@
-from typing import Generic, NotRequired, TypedDict, TypeVar
+from typing import Generic, Literal, NotRequired, TypedDict, TypeVar
 
 from pocketbase.utils.types import JsonType
 
@@ -127,3 +127,8 @@ class AuthResult(TypedDict):
 class AdminAuthResult(TypedDict):
     token: str
     admin: AdminModel
+
+
+class RealtimeEvent(TypedDict):
+    action: Literal["create", "update", "delete"]
+    record: Record
