@@ -8,7 +8,7 @@ from contextlib import suppress
 from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
 
-from httpx import ReadError
+from httpx import ReadError, RemoteProtocolError
 from httpx_sse import aconnect_sse
 
 from pocketbase.models.dtos import RealtimeEvent
@@ -66,7 +66,7 @@ class RealtimeService(Service):
                                     except:  # noqa: E722
                                         # We never want any exception to break the realtime handler.
                                         logging.exception("Unhandled exception in realtime event handler")
-                except (ReadError, asyncio.TimeoutError):
+                except (ReadError, asyncio.TimeoutError, RemoteProtocolError):
                     logging.debug("Connection lost, reconnecting automatically")
                     if last_event_id:
                         headers["Last-Event-ID"] = last_event_id
