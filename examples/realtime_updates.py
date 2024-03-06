@@ -2,7 +2,7 @@ import asyncio
 from datetime import datetime
 
 from pocketbase import PocketBase
-from pocketbase.services.realtime import RealtimeEvent
+from pocketbase.models.dtos import RealtimeEvent
 
 CONNECTION_URL = "http://localhost:8123"
 ADMIN_EMAIL = "test@example.com"
@@ -24,6 +24,7 @@ async def callback(event: RealtimeEvent) -> None:
 
 async def realtime_updates():
     """Establishes a PocketBase connection, authenticates, and subscribes to Realtime events."""
+    unsubscribe = None
 
     try:
         # Instantiate the PocketBase connector
