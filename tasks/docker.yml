@@ -1,0 +1,101 @@
+version: "3.0"
+
+set: ['e', 'u', 'pipefail']
+shopt: ['globstar']
+
+env:
+  COMPOSE_FILE: "{{.TLD}}/docker-compose.yml"
+  PLATFORM: "linux/amd64"
+
+tasks:
+  all:
+    desc: "Run all tasks"
+    deps:
+      - enable_registry
+      - build
+      - push
+
+  # TODO: add conditional to login differently based on registry
+  login:
+    desc: "Login to the registry"
+    run: once
+    cmds:
+      - echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${USER_NAME}" --password-stdin
+
+  net:
+    desc: "Create docker network"
+    cmds:
+      - |
+        docker network create \
+        --driver bridge \
+        {{.NETWORK}}
+
+  up:
+    desc: "Start the project with docker compose"
+    cmds:
+      - |
+        docker compose -f {{.COMPOSE_FILE}} up -d \
+        --build \
+        --remove-orphans
+
+  exec:
+    desc: "Interactive shell for running container"
+    cmds:
+      - docker exec -it ${SERVICE}-app bash
+
+  # TODO: handle siqint ('exit status 130')
+  logs:
+    desc: "Show logs for running container services"
+    cmds:
+      - docker compose -f {{.COMPOSE_FILE}} logs -tf
+
+  stop:
+    desc: "Stop the project with docker compose"
+    cmds:
+      - docker compose -f {{.COMPOSE_FILE}} stop
+
+  down:
+    desc: "Stop and remove containers and networks with docker compose"
+    cmds:
+      - docker compose -f {{.COMPOSE_FILE}} down
+
+  build:
+    desc: "Build the docker image for the app"
+    cmds:
+      - |
+        case {{.CLI_ARGS}} in
+          app)
+            docker buildx build \
+            --platform={{.PLATFORM}} \
+            -f Dockerfile \
+            -t "${REGISTRY_URL}/${USER_NAME}/${SERVICE}:latest" \
+            --load \
+            "{{.TLD}}"
+            ;;
+          db)
+            docker buildx build \
+            --platform={{.PLATFORM}} \
+            -f Dockerfile.postgres \
+            -t "${REGISTRY_URL}/${USER_NAME}/${SERVICE}-db:latest" \
+            --load \
+            "{{.TLD}}"
+            ;;
+          *)
+            echo "Invalid argument: {{.CLI_ARGS}}"
+            echo "Usage: task build -- <app|db>"
+            ;;
+        esac
+
+  push:
+    desc: "Push the docker app image to the registry"
+    deps:
+      - build
+      - login
+    cmds:
+      - docker push "${REGISTRY_URL}/${USER_NAME}/${SERVICE}"
+
+  prune:
+    desc: "Prune docker"
+    cmds:
+      - docker system prune --all --force
+      - docker buildx builder prune --all --force

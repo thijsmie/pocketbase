@@ -1,0 +1,113 @@
+version: "3.0"
+
+set: ['e', 'u', 'pipefail']
+shopt: ['globstar']
+
+tasks:
+  default:
+    desc: "Default task"
+    cmds:
+      - task --list
+
+  add-pypi:
+    desc: "Add test-pypi repository"
+    cmds:
+      - |
+        case {{.CLI_ARGS}} in
+          "test")
+            if [[ -z $(poetry config repositories.test-pypi) ]]; then
+              poetry config repositories.test-pypi https://test.pypi.org/legacy/
+              poetry config pypi-token.test-pypi {{.PYPI_TEST_TOKEN}}
+            fi
+            ;;
+          "prod")
+            if [[ -z $(poetry config repositories.pypi) ]]; then
+              poetry config repositories.pypi https://pypi.org/simple/
+              poetry config pypi-token.pypi {{.PYPI_TOKEN}}
+            fi
+            ;;
+          *|"")
+            echo "Invalid repository"
+            ;;
+        esac
+    run: once
+    silent: true
+
+  build:
+    desc: "Build the poetry bin"
+    cmds:
+      - poetry build --format wheel --no-ansi
+
+  install:
+    desc: "Install project dependencies"
+    cmds:
+      - poetry install --no-ansi
+
+  bump-semver:
+    desc: "Bump the project semantic version"
+    cmds:
+      - |
+        case {{.CLI_ARGS}} in
+          "major")
+            poetry version major --no-ansi
+            ;;
+          "minor")
+            poetry version minor --no-ansi
+            ;;
+          "patch")
+            poetry version patch --no-ansi
+            ;;
+          "prerelease")
+            poetry version prerelease --no-ansi
+            ;;
+          *|"")
+            echo "Invalid version"
+            ;;
+        esac
+
+  publish:
+    desc: "Publish the poetry bin"
+    deps: ["add-pypi", "build"]
+    summary: |
+      Release your project to PyPI or TestPyPI.
+
+      Run via `task poetry:publish -- test` to publish to TestPyPI or
+      `task poetry:publish -- prod` to publish to PyPI.
+    cmds:
+      - |
+        case {{.CLI_ARGS}} in
+          "test")
+            poetry publish -r test-pypi
+            ;;
+          "prod")
+            poetry publish
+            ;;
+          *|"")
+            echo "Invalid repository"
+            ;;
+        esac
+
+  coverage:
+    desc: "Run the poetry coverage report"
+    cmds:
+      - poetry run coverage report -m --skip-covered --skip-empty
+
+  update-deps:
+    desc: "Update dependencies"
+    cmds:
+      - |
+        poetry cache clear --all pypi --no-ansi
+        poetry up 2>/dev/null
+        poetry update --lock --no-ansi
+
+  export-reqs:
+    desc: "Export requirements.txt"
+    summary: |
+      Export the project dependencies to a requirements.txt file.
+    cmds:
+      - |
+        poetry export -f requirements.txt \
+          --output {{.TLD}}/requirements.txt \
+          --without-hashes \
+          --no-ansi
+    ignore_error: true

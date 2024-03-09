@@ -55,9 +55,10 @@ Don't forget to give the project a star! Thanks again!
 
 1. Fork the project
 2. Create your feature branch (`git checkout -b feat/some-nice-feature`)
-3. Commit your changes (`git commit -m 'feat: Add some AmazingFeature'`)
-4. Push to the pranch (`git push -u origin feat/some-nice-feature`)
-5. Open a pull request
+3. Add your changes (`git add .`)
+4. Commit your changes (`git commit -m 'feat: Add some AmazingFeature'`)
+5. Push to the pranch (`git push -u origin feat/some-nice-feature`)
+6. Open a pull request
 
 ## License
 
@@ -73,6 +74,34 @@ The `pocketbase-async` package was inspired and guided in implementation by seve
 
 Furthermore, a lot of the API tests were adapted from Vaphes' work (licensed MIT).
 
+## Development
+
+### Setup
+
+- Follow the same steps as [Contributing](#contributing)
+- Install the development dependencies via `make`:
+  ```bash
+  # all dependencies (xcode, asdf, brew, devbox, pre-commit, task)
+  make install
+
+  # specific dependencies (e.g., task only)
+  make task
+  ```
+
+### Task
+
+- See [taskfile.dev](https://taskfile.dev/#/usage) for the full documentation
+- Quickstart:
+  ```bash
+  # list all available tasks
+  task --list
+
+  # run a specific task
+  task test
+
+  # run subtasks
+  task poetry:build
+  ```
 
 <hr/>
 <a href="#readme-top">:arrow_up_small: Back to top</a>

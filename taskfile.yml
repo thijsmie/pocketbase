@@ -1,0 +1,47 @@
+version: "3.0"
+
+set: ['e', 'u', 'pipefail']
+shopt: ['globstar']
+
+dotenv: ['.env']
+
+env:
+  TLD:
+    sh: git rev-parse --show-toplevel
+  COMPOSE_FILE: docker-compose.yml
+  NETWORK: app-tier
+
+vars:
+
+includes:
+  docker:
+    taskfile: ./tasks/docker.yml
+    aliases: ["docker"]
+  poetry:
+    taskfile: ./tasks/poetry.yml
+    aliases: ["poetry"]
+
+tasks:
+  print:
+    - |
+      echo -e "TLD:\t\t$TLD"
+
+  default:
+    desc: "Default task"
+    cmds:
+      - task --list
+
+  lint:
+    desc: "Run linters"
+    cmds:
+      - poetry run ruff format src tests examples
+      - poetry run ruff check --fix src tests
+      - poetry run mypy src
+
+  test:
+    desc: "Run tests"
+    deps:
+      - lint
+    cmds:
+      - |
+        poetry run pytest --cov=pocketbase
