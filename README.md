@@ -57,7 +57,7 @@ Don't forget to give the project a star! Thanks again!
 2. Create your feature branch (`git checkout -b feat/some-nice-feature`)
 3. Add your changes (`git add .`)
 4. Commit your changes (`git commit -m 'feat: Add some AmazingFeature'`)
-5. Push to the pranch (`git push -u origin feat/some-nice-feature`)
+5. Push to the branch (`git push -u origin feat/some-nice-feature`)
 6. Open a pull request
 
 ## License
