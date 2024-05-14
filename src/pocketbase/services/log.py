@@ -23,6 +23,9 @@ class LogService(Service):
         if options and "filter" in options:
             send_options["params"]["filter"] = options["filter"]
 
+        if options and "sort" in options:
+            send_options["params"]["sort"] = options["sort"]
+
         return await self._send("", send_options)  # type: ignore
 
     async def get_one(self, record_id: str, options: CommonOptions | None = None) -> LogModel:

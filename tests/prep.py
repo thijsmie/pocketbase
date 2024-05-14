@@ -4,7 +4,7 @@ from zipfile import ZipFile
 
 import httpx
 
-POCKETBASE_VERSION = "0.22.2"
+POCKETBASE_VERSION = "0.22.12"
 POCKETBASE_PLATFORM = "linux_amd64"
 
 

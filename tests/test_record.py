@@ -153,6 +153,30 @@ async def test_get_filter(admin_client: PocketBase, collection: CollectionModel)
     assert [record_b] == (await col.get_list(options={"filter": 'title = "b"'}))["items"]
 
 
+async def test_get_sorted(admin_client: PocketBase, collection: CollectionModel):
+    col = admin_client.collection(collection["id"])
+    record_a = await col.create(
+        {
+            "title": "a",
+        }
+    )
+    record_c = await col.create(
+        {
+            "title": "c",
+        }
+    )
+    record_b = await col.create(
+        {
+            "title": "b",
+        }
+    )
+
+    falling = await col.get_list(options={"sort": "-title"})
+    rising = await col.get_list(options={"sort": "+title"})
+    assert [record_a, record_b, record_c] == rising["items"]
+    assert [record_c, record_b, record_a] == falling["items"]
+
+
 async def test_update(admin_client: PocketBase, collection: CollectionModel):
     col = admin_client.collection(collection["id"])
     record = await col.create({"title": "a"})

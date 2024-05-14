@@ -29,6 +29,9 @@ class CrudService(Service, Generic[_T]):
         if options and "filter" in options:
             send_options["params"]["filter"] = options["filter"]  # type: ignore
 
+        if options and "sort" in options:
+            send_options["params"]["sort"] = options["sort"]  # type: ignore
+
         return await self._send("", send_options)  # type: ignore
 
     async def get_full_list(self, options: FullListOptions | None = None) -> list[_T]:
