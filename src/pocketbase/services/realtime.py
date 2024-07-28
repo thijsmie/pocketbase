@@ -66,7 +66,7 @@ class RealtimeService(Service):
                                     except:  # noqa: E722
                                         # We never want any exception to break the realtime handler.
                                         logging.exception("Unhandled exception in realtime event handler")
-                except (ReadError, asyncio.TimeoutError, RemoteProtocolError):
+                except (TimeoutError, ReadError, RemoteProtocolError):
                     logging.debug("Connection lost, reconnecting automatically")
                     if last_event_id:
                         headers["Last-Event-ID"] = last_event_id
