@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from httpx import Request, Response
 
-from pocketbase.models.errors import PocketbaseError
+from pocketbase.models.errors import PocketBaseError
 from pocketbase.models.options import SendOptions
 from pocketbase.utils.types import JsonType, SendableFiles, transform
 
@@ -33,19 +33,16 @@ class Service:
 
     async def _send(self, path: str, options: SendOptions) -> JsonType:
         response = await self._send_raw(path, options)
-        data = response.json()
+        PocketBaseError.raise_for_status(response)
 
-        if response.status_code >= 400:
-            raise PocketbaseError(url=str(response.url), status=response.status_code, data=data)
-
-        return data
+        try:
+            return response.json()
+        except ValueError as e:
+            raise PocketBaseError(str(response.url), response.status_code, "PocketBase returned invalid JSON") from e
 
     async def _send_noreturn(self, path: str, options: SendOptions) -> None:
         response = await self._send_raw(path, options)
-
-        if response.status_code >= 400:
-            data = response.json()
-            raise PocketbaseError(url=str(response.url), status=response.status_code, data=data)
+        PocketBaseError.raise_for_status(response)
 
     def _init_send(self, path: str, options: SendOptions) -> Request:
         headers = self._pb.headers()

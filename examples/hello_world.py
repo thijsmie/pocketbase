@@ -1,4 +1,4 @@
-from pocketbase import PocketBase, PocketbaseError
+from pocketbase import PocketBase, PocketBaseError
 
 CONNECTION_URL = "http://localhost:8123"
 ADMIN_EMAIL = "test@example.com"
@@ -29,7 +29,7 @@ async def hello_world():
                 ],
             }
         )
-    except PocketbaseError:
+    except PocketBaseError:
         # You probably ran this example before, and the collection already exists!
         # No problem, we'll continue as normal :)
         pass

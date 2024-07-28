@@ -2,7 +2,7 @@ from typing import Generic, TypeVar, cast
 from urllib.parse import quote
 
 from pocketbase.models.dtos import ListResult
-from pocketbase.models.errors import PocketbaseError
+from pocketbase.models.errors import PocketBaseNotFoundError
 from pocketbase.models.options import CommonOptions, FirstOptions, FullListOptions, ListOptions, SendOptions
 from pocketbase.services.base import Service
 from pocketbase.utils.types import BodyDict
@@ -65,7 +65,7 @@ class CrudService(Service, Generic[_T]):
         list_options["params"]["skipTotal"] = 1
         result = await self.get_list(1, 1, list_options)
         if not result["items"]:
-            raise PocketbaseError(
+            raise PocketBaseNotFoundError(
                 url=self._build_url(""),
                 status=404,
                 data={"code": 404, "message": "The requested resource wasn't found.", "data": {}},

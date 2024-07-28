@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
-from pocketbase import PocketBase, PocketbaseError
+from pocketbase import PocketBase, PocketBaseError
 from pocketbase.models.dtos import CollectionModel
 
 
@@ -191,14 +191,14 @@ async def test_delete(admin_client: PocketBase, collection: CollectionModel):
     record = await col.create({"title": "a"})
     await col.delete(record["id"])
     # deleting already deleted record should give 404
-    with pytest.raises(PocketbaseError) as exc:
+    with pytest.raises(PocketBaseError) as exc:
         await col.delete(record["id"])
     assert exc.value.status == 404
 
 
 async def test_get_one(admin_client: PocketBase, collection: CollectionModel):
     col = admin_client.collection(collection["id"])
-    with pytest.raises(PocketbaseError) as exc:
+    with pytest.raises(PocketBaseError) as exc:
         await col.get_one("blblblbllb")
     assert exc.value.status == 404
 
