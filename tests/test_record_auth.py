@@ -3,7 +3,7 @@ from uuid import uuid4
 import pytest
 from pocketbase import PocketBase
 from pocketbase.models.dtos import Record
-from pocketbase.models.errors import PocketbaseError
+from pocketbase.models.errors import PocketBaseError
 
 
 @pytest.fixture
@@ -43,7 +43,7 @@ async def test_delete_user(admin_client: PocketBase, client: PocketBase, user: t
 
 
 async def test_invalid_login_exception(client: PocketBase):
-    with pytest.raises(PocketbaseError) as exc:
+    with pytest.raises(PocketBaseError) as exc:
         await client.collection("users").auth.with_password(uuid4().hex, uuid4().hex)
     assert exc.value.status == 400
 

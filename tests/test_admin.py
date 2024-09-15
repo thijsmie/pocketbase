@@ -3,7 +3,7 @@ from uuid import uuid4
 import pytest
 from pocketbase import PocketBase
 from pocketbase.models.dtos import AdminModel
-from pocketbase.models.errors import PocketbaseError
+from pocketbase.models.errors import PocketBaseError
 
 
 async def test_login(admin_client: PocketBase, admin: tuple[str, str]):
@@ -54,14 +54,14 @@ async def test_delete_admin(admin_client: PocketBase):
     admin, _, _ = await create_admin(admin_client)
     await admin_client.admins.delete(admin["id"])
 
-    with pytest.raises(PocketbaseError) as e:
+    with pytest.raises(PocketBaseError) as e:
         await admin_client.admins.get_one(admin["id"])
 
     assert e.value.status == 404
 
 
 async def test_invalid_login_exception(client: PocketBase):
-    with pytest.raises(PocketbaseError) as exc:
+    with pytest.raises(PocketBaseError) as exc:
         await client.admins.auth.with_password(uuid4().hex, uuid4().hex)
     assert exc.value.status == 400  # invalid login
 

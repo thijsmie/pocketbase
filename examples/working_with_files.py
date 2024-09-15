@@ -1,4 +1,4 @@
-from pocketbase import FileUpload, PocketBase, PocketbaseError
+from pocketbase import FileUpload, PocketBase, PocketBaseError
 
 CONNECTION_URL = "http://localhost:8123"
 ADMIN_EMAIL = "test@example.com"
@@ -32,7 +32,7 @@ async def working_with_files():
                 ],
             }
         )
-    except PocketbaseError:
+    except PocketBaseError:
         # Collection probably exists
         pass
 
