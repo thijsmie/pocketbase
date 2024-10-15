@@ -10,7 +10,7 @@ async def hello_world():
     pb = PocketBase("http://localhost:8123")
 
     # Authenticate as an admin
-    await pb.admin.auth.with_password(email=ADMIN_EMAIL, password=ADMIN_PASSWORD)
+    await pb.admins.auth.with_password(email=ADMIN_EMAIL, password=ADMIN_PASSWORD)
 
     # Create a collection to store records in
     # It is a base collection (not "view" or "auth") with one column "content"
