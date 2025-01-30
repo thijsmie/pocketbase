@@ -82,5 +82,5 @@ class BackupService(Service):
         await self._send_noreturn(f"/{quote(key)}/restore", send_options)
 
     async def get_download_url(self, key: ZipFileName) -> str:
-        admin_token = await self._pb.files.get_token()
-        return self._build_url(f"{quote(key)}?token={quote(admin_token)}")
+        token = await self._pb.files.get_token()
+        return self._build_url(f"{quote(key)}?token={quote(token)}")

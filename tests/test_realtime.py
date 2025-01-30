@@ -7,16 +7,17 @@ from uuid import uuid4
 
 import httpx
 from httpx_sse import ServerSentEvent
+
 from pocketbase import PocketBase
 from pocketbase.services.realtime import RealtimeEvent
 
 
-async def test_realtime(admin_client: PocketBase) -> None:
-    await admin_client.collections.create(
+async def test_realtime(superuser_client: PocketBase) -> None:
+    await superuser_client.collections.create(
         {
             "name": "test",
             "type": "base",
-            "schema": [
+            "fields": [
                 {
                     "name": "title",
                     "type": "text",
@@ -25,7 +26,7 @@ async def test_realtime(admin_client: PocketBase) -> None:
             ],
         }
     )
-    col = admin_client.collection("test")
+    col = superuser_client.collection("test")
 
     event_trigger = asyncio.Event()
     event_payload: RealtimeEvent | None = None
@@ -80,7 +81,7 @@ class MockAsyncIteratorCallable:
             raise StopAsyncIteration
 
 
-async def test_realtime_all_records(admin_client: PocketBase) -> None:
+async def test_realtime_all_records(superuser_client: PocketBase) -> None:
     def handler(_r):
         return httpx.Response(200, json={})
 

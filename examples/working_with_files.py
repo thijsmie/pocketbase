@@ -1,16 +1,16 @@
 from pocketbase import FileUpload, PocketBase, PocketBaseError
 
 CONNECTION_URL = "http://localhost:8123"
-ADMIN_EMAIL = "test@example.com"
-ADMIN_PASSWORD = "test"
+SUPERUSER_EMAIL = "test@example.com"
+SUPERUSER_PASSWORD = "test"
 
 
 async def working_with_files():
     # Instantiate the PocketBase connector
     pb = PocketBase("http://localhost:8123")
 
-    # Authenticate as an admin
-    await pb.admin.auth.with_password(email=ADMIN_EMAIL, password=ADMIN_PASSWORD)
+    # Authenticate as a superuser
+    await pb.collection("_superusers").auth.with_password(email=SUPERUSER_EMAIL, password=SUPERUSER_PASSWORD)
 
     # Create a collection
     try:
@@ -18,7 +18,7 @@ async def working_with_files():
             {
                 "name": "working_with_files",
                 "type": "base",
-                "schema": [
+                "fields": [
                     {
                         "name": "name",
                         "type": "text",

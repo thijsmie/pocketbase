@@ -5,8 +5,8 @@ from pocketbase import PocketBase
 from pocketbase.models.dtos import RealtimeEvent
 
 CONNECTION_URL = "http://localhost:8123"
-ADMIN_EMAIL = "test@example.com"
-ADMIN_PASSWORD = "test"
+SUPERUSER_EMAIL = "test@example.com"
+SUPERUSER_PASSWORD = "test"
 COLLECTION_NAME = "example_collection"
 
 
@@ -30,8 +30,8 @@ async def realtime_updates():
         # Instantiate the PocketBase connector
         pb = PocketBase(CONNECTION_URL)
 
-        # Authenticate as an admin
-        await pb.admins.auth.with_password(ADMIN_EMAIL, ADMIN_PASSWORD)
+        # Authenticate as a superuser
+        await pb.collection("_superusers").auth.with_password(email=SUPERUSER_EMAIL, password=SUPERUSER_PASSWORD)
 
         # Get the collection object
         col = pb.collection(COLLECTION_NAME)

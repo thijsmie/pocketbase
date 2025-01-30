@@ -15,13 +15,6 @@ class ListResult(TypedDict, Generic[_T]):
 
 class BaseDict(TypedDict):
     id: str
-    created: str
-    updated: str
-
-
-class AdminModel(BaseDict):
-    avatar: int
-    email: str
 
 
 class SchemaField:
@@ -103,17 +96,9 @@ class Oauth2Payload(TypedDict):
     createData: NotRequired[dict[str, JsonType]]
 
 
-class AuthMethods(TypedDict):
-    usernamePassword: bool
-    emailPassword: bool
-    authProviders: list[AuthProvider]
-
-
 class Record(TypedDict, total=False):
     collectionId: str
     collectionName: str
-    created: str
-    updated: str
     id: str
     extend: JsonType
 
@@ -124,11 +109,37 @@ class AuthResult(TypedDict):
     meta: NotRequired[JsonType]
 
 
-class AdminAuthResult(TypedDict):
-    token: str
-    admin: AdminModel
+class OTPResult(TypedDict):
+    otpId: str
 
 
 class RealtimeEvent(TypedDict):
     action: Literal["create", "update", "delete"]
     record: Record
+
+
+class AuthMethodPassword(TypedDict):
+    enabled: bool
+    identityFields: list[str]
+
+
+class AuthMethodOauth2(TypedDict):
+    enabled: bool
+    providers: list[AuthProvider]
+
+
+class AuthMethodMfa(TypedDict):
+    enabled: bool
+    duration: int
+
+
+class AuthMethodOtp(TypedDict):
+    enabled: bool
+    duration: int
+
+
+class AuthMethods(TypedDict):
+    password: AuthMethodPassword
+    oauth2: AuthMethodOauth2
+    mfa: AuthMethodMfa
+    otp: AuthMethodOtp

@@ -2,24 +2,27 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
+
 from pocketbase import PocketBase, PocketBaseError
 from pocketbase.models.dtos import CollectionModel
 
 
 @pytest.fixture
-async def collection(admin_client: PocketBase) -> CollectionModel:
+async def collection(superuser_client: PocketBase) -> CollectionModel:
     schema = [
+        {"name": "created", "onCreate": True, "onUpdate": False, "type": "autodate"},
+        {"name": "updated", "onCreate": True, "onUpdate": True, "type": "autodate"},
         {
             "name": "title",
             "type": "text",
             "required": True,
         },
     ]
-    coll = await admin_client.collections.create(
+    coll = await superuser_client.collections.create(
         {
             "name": uuid4().hex,
             "type": "base",
-            "schema": schema,
+            "fields": schema,
         }
     )
     schema.append(
@@ -27,11 +30,9 @@ async def collection(admin_client: PocketBase) -> CollectionModel:
             "name": "rel",
             "type": "relation",
             "required": False,
-            "options": {
-                "collectionId": coll["id"],
-                "cascadeDelete": False,
-                "maxSelect": 1,
-            },
+            "collectionId": coll["id"],
+            "cascadeDelete": False,
+            "maxSelect": 1,
         },
     )
     schema.append(
@@ -39,19 +40,17 @@ async def collection(admin_client: PocketBase) -> CollectionModel:
             "name": "multirel",
             "type": "relation",
             "required": False,
-            "options": {
-                "collectionId": coll["id"],
-                "cascadeDelete": False,
-                "maxSelect": 5,
-            },
+            "collectionId": coll["id"],
+            "cascadeDelete": False,
+            "maxSelect": 5,
         },
     )
-    return await admin_client.collections.update(coll["id"], {"schema": schema})
+    return await superuser_client.collections.update(coll["id"], {"fields": schema})
 
 
-async def test_create_record(admin_client: PocketBase, collection: CollectionModel):
+async def test_create_record(superuser_client: PocketBase, collection: CollectionModel):
     bname = uuid4().hex
-    col = admin_client.collection(collection["id"])
+    col = superuser_client.collection(collection["id"])
     record = await col.create(
         {
             "title": bname,
@@ -61,9 +60,9 @@ async def test_create_record(admin_client: PocketBase, collection: CollectionMod
     assert record == await col.get_first()
 
 
-async def test_create_multiple_record(admin_client: PocketBase, collection: CollectionModel):
+async def test_create_multiple_record(superuser_client: PocketBase, collection: CollectionModel):
     records = []
-    col = admin_client.collection(collection["id"])
+    col = superuser_client.collection(collection["id"])
 
     for _ in range(10):
         records.append(
@@ -88,14 +87,14 @@ async def test_create_multiple_record(admin_client: PocketBase, collection: Coll
         rel = rel["expand"]["rel"]
 
 
-async def test_create_multi_relation_record(admin_client: PocketBase, collection: CollectionModel):
+async def test_create_multi_relation_record(superuser_client: PocketBase, collection: CollectionModel):
     records = []
-    col = admin_client.collection(collection["id"])
+    col = superuser_client.collection(collection["id"])
 
     for _ in range(5):
         records.append(
             (
-                await admin_client.collection(collection["id"]).create(
+                await superuser_client.collection(collection["id"]).create(
                     {
                         "title": uuid4().hex,
                         "multirel": records if records else [],
@@ -116,9 +115,9 @@ async def test_create_multi_relation_record(admin_client: PocketBase, collection
         rel = rel["expand"]["multirel"][-1]
 
 
-async def test_get_record(admin_client: PocketBase, collection: CollectionModel):
+async def test_get_record(superuser_client: PocketBase, collection: CollectionModel):
     bname = uuid4().hex
-    col = admin_client.collection(collection["id"])
+    col = superuser_client.collection(collection["id"])
     record = await col.create(
         {
             "title": bname,
@@ -132,8 +131,8 @@ async def test_get_record(admin_client: PocketBase, collection: CollectionModel)
     assert record["title"] == bname
 
 
-async def test_get_filter(admin_client: PocketBase, collection: CollectionModel):
-    col = admin_client.collection(collection["id"])
+async def test_get_filter(superuser_client: PocketBase, collection: CollectionModel):
+    col = superuser_client.collection(collection["id"])
     record_a = await col.create(
         {
             "title": "a",
@@ -153,8 +152,8 @@ async def test_get_filter(admin_client: PocketBase, collection: CollectionModel)
     assert [record_b] == (await col.get_list(options={"filter": 'title = "b"'}))["items"]
 
 
-async def test_get_sorted(admin_client: PocketBase, collection: CollectionModel):
-    col = admin_client.collection(collection["id"])
+async def test_get_sorted(superuser_client: PocketBase, collection: CollectionModel):
+    col = superuser_client.collection(collection["id"])
     record_a = await col.create(
         {
             "title": "a",
@@ -177,8 +176,8 @@ async def test_get_sorted(admin_client: PocketBase, collection: CollectionModel)
     assert [record_c, record_b, record_a] == falling["items"]
 
 
-async def test_update(admin_client: PocketBase, collection: CollectionModel):
-    col = admin_client.collection(collection["id"])
+async def test_update(superuser_client: PocketBase, collection: CollectionModel):
+    col = superuser_client.collection(collection["id"])
     record = await col.create({"title": "a"})
     updated = await col.update(record["id"], {"title": "b"})
     assert record != updated
@@ -186,8 +185,8 @@ async def test_update(admin_client: PocketBase, collection: CollectionModel):
     assert updated["created"] == record["created"]
 
 
-async def test_delete(admin_client: PocketBase, collection: CollectionModel):
-    col = admin_client.collection(collection["id"])
+async def test_delete(superuser_client: PocketBase, collection: CollectionModel):
+    col = superuser_client.collection(collection["id"])
     record = await col.create({"title": "a"})
     await col.delete(record["id"])
     # deleting already deleted record should give 404
@@ -196,19 +195,19 @@ async def test_delete(admin_client: PocketBase, collection: CollectionModel):
     assert exc.value.status == 404
 
 
-async def test_get_one(admin_client: PocketBase, collection: CollectionModel):
-    col = admin_client.collection(collection["id"])
+async def test_get_one(superuser_client: PocketBase, collection: CollectionModel):
+    col = superuser_client.collection(collection["id"])
     with pytest.raises(PocketBaseError) as exc:
         await col.get_one("blblblbllb")
     assert exc.value.status == 404
 
 
-async def test_datetime(admin_client: PocketBase):
-    await admin_client.collections.create(
+async def test_datetime(superuser_client: PocketBase):
+    await superuser_client.collections.create(
         {
             "name": "datetime",
             "type": "base",
-            "schema": [
+            "fields": [
                 {
                     "name": "when",
                     "type": "date",
@@ -217,5 +216,5 @@ async def test_datetime(admin_client: PocketBase):
             ],
         }
     )
-    await admin_client.collection("datetime").create({"when": datetime.now()})
-    await admin_client.collection("datetime").create({"when": datetime.now(tz=UTC)})
+    await superuser_client.collection("datetime").create({"when": datetime.now()})
+    await superuser_client.collection("datetime").create({"when": datetime.now(tz=UTC)})

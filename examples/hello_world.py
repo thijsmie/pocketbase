@@ -1,26 +1,26 @@
 from pocketbase import PocketBase, PocketBaseError
 
 CONNECTION_URL = "http://localhost:8123"
-ADMIN_EMAIL = "test@example.com"
-ADMIN_PASSWORD = "test"
+SUPERUSER_EMAIL = "test@example.com"
+SUPERUSER_PASSWORD = "test"
 
 
 async def hello_world():
     # Instantiate the PocketBase connector
     pb = PocketBase("http://localhost:8123")
 
-    # Authenticate as an admin
-    await pb.admins.auth.with_password(email=ADMIN_EMAIL, password=ADMIN_PASSWORD)
+    # Authenticate as a superuser
+    await pb.collection("_superusers").auth.with_password(email=SUPERUSER_EMAIL, password=SUPERUSER_PASSWORD)
 
     # Create a collection to store records in
     # It is a base collection (not "view" or "auth") with one column "content"
-    # and it will have the regular "id", "created" and "updated" columns.
+    # and it will have the regular "id" column.
     try:
         await pb.collections.create(
             {
                 "name": "hello_world",
                 "type": "base",
-                "schema": [
+                "fields": [
                     {
                         "name": "content",
                         "type": "text",

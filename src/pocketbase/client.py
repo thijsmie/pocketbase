@@ -1,6 +1,5 @@
 from httpx import AsyncClient, Request, Response
 
-from pocketbase.services.admin import AdminService
 from pocketbase.services.authorization import AuthStore
 from pocketbase.services.backup import BackupService
 from pocketbase.services.collection import CollectionService
@@ -25,7 +24,6 @@ class PocketBase:
 
     def __init__(self, base_url: str) -> None:
         self._inners = self._inner_cls_(self, base_url)
-        self._admin_service: AdminService = AdminService(self, self._inners)
         self._collections_service: CollectionService = CollectionService(self, self._inners)
         self._file_service: FileService = FileService(self, self._inners)
         self._log_service: LogService = LogService(self, self._inners)
@@ -42,10 +40,6 @@ class PocketBase:
 
     async def after_send(self, response: Response) -> Response | None:
         pass
-
-    @property
-    def admins(self) -> AdminService:
-        return self._admin_service
 
     @property
     def collections(self) -> CollectionService:
