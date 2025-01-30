@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 import pytest
+
 from pocketbase import PocketBase
 from pocketbase.models.dtos import Record
 from pocketbase.models.errors import PocketBaseError

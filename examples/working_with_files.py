@@ -18,7 +18,7 @@ async def working_with_files():
             {
                 "name": "working_with_files",
                 "type": "base",
-                "schema": [
+                "fields": [
                     {
                         "name": "name",
                         "type": "text",

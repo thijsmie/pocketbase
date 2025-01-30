@@ -20,7 +20,7 @@ async def hello_world():
             {
                 "name": "hello_world",
                 "type": "base",
-                "schema": [
+                "fields": [
                     {
                         "name": "content",
                         "type": "text",

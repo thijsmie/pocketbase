@@ -7,8 +7,8 @@ from subprocess import DEVNULL, Popen
 from time import sleep
 
 import pytest
-from pocketbase import PocketBase
 
+from pocketbase import PocketBase
 from tests.prep import ensure_pocketbase_executable
 
 
@@ -44,7 +44,7 @@ def process(admin: tuple[str, str], port: int, executable: Path, tmpdir_factory)
     )
     sleep(0.3)
     Popen(
-        args=["_", "admin", "create", admin[0], admin[1], f"--dir={directory}"],
+        args=["_", "superuser", "create", admin[0], admin[1], f"--dir={directory}"],
         executable=executable,
         stdout=DEVNULL,
         stderr=DEVNULL,

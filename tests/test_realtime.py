@@ -7,6 +7,7 @@ from uuid import uuid4
 
 import httpx
 from httpx_sse import ServerSentEvent
+
 from pocketbase import PocketBase
 from pocketbase.services.realtime import RealtimeEvent
 
@@ -16,7 +17,7 @@ async def test_realtime(admin_client: PocketBase) -> None:
         {
             "name": "test",
             "type": "base",
-            "schema": [
+            "fields": [
                 {
                     "name": "title",
                     "type": "text",

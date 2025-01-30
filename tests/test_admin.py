@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 import pytest
+
 from pocketbase import PocketBase
 from pocketbase.models.dtos import AdminModel
 from pocketbase.models.errors import PocketBaseError
@@ -18,7 +19,6 @@ async def create_admin(admin_client: PocketBase) -> AdminModel:
             {
                 "email": email,
                 "password": password,
-                "avatar": 8,
             }
         ),
         email,
@@ -37,17 +37,6 @@ async def test_login_as_created_admin(admin_client: PocketBase, client: PocketBa
     await client.admins.auth.with_password(email, password)
     assert client._inners.auth.admin_id != admin_client._inners.auth.admin_id
     assert client._inners.auth.admin_id == admin["id"]
-
-
-async def test_update_admin(admin_client: PocketBase):
-    await admin_client.admins.update(
-        admin_client._inners.auth.admin_id,
-        {
-            "avatar": 4,
-        },
-    )
-
-    assert admin_client._inners.auth._authority["avatar"] == 4
 
 
 async def test_delete_admin(admin_client: PocketBase):

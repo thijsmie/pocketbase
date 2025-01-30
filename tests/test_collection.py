@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 import pytest
+
 from pocketbase import PocketBase
 from pocketbase.models.dtos import Collection
 from pocketbase.models.errors import PocketBaseError
@@ -11,7 +12,7 @@ async def create_collection(client: PocketBase) -> tuple[Collection, str]:
         {
             "name": uuid4().hex,
             "type": "base",
-            "schema": [
+            "fields": [
                 {
                     "name": "title",
                     "type": "text",
@@ -38,7 +39,7 @@ async def test_update(admin_client: PocketBase):
         collection["id"],
         {
             "name": new_name,
-            "schema": [
+            "fields": [
                 {
                     "name": "title",
                     "type": "text",
@@ -82,7 +83,7 @@ async def test_import_collection(admin_client: PocketBase):
     data = [
         {
             "name": uuid4().hex,
-            "schema": [
+            "fields": [
                 {
                     "name": "status",
                     "type": "bool",
@@ -91,7 +92,7 @@ async def test_import_collection(admin_client: PocketBase):
         },
         {
             "name": uuid4().hex,
-            "schema": [
+            "fields": [
                 {
                     "name": "title",
                     "type": "text",

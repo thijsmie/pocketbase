@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
+
 from pocketbase import PocketBase, PocketBaseError
 from pocketbase.models.dtos import CollectionModel
 
@@ -19,7 +20,7 @@ async def collection(admin_client: PocketBase) -> CollectionModel:
         {
             "name": uuid4().hex,
             "type": "base",
-            "schema": schema,
+            "fields": schema,
         }
     )
     schema.append(
@@ -46,7 +47,7 @@ async def collection(admin_client: PocketBase) -> CollectionModel:
             },
         },
     )
-    return await admin_client.collections.update(coll["id"], {"schema": schema})
+    return await admin_client.collections.update(coll["id"], {"fields": schema})
 
 
 async def test_create_record(admin_client: PocketBase, collection: CollectionModel):
@@ -208,7 +209,7 @@ async def test_datetime(admin_client: PocketBase):
         {
             "name": "datetime",
             "type": "base",
-            "schema": [
+            "fields": [
                 {
                     "name": "when",
                     "type": "date",

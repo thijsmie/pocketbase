@@ -30,7 +30,7 @@ async def create_file_collection(admin_client: PocketBase):
         {
             "name": uuid4().hex,
             "type": "base",
-            "schema": schema,
+            "fields": schema,
         }
     )
 
