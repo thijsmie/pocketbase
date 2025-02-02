@@ -7,8 +7,8 @@ from subprocess import DEVNULL, Popen
 from time import sleep
 
 import pytest
-from pocketbase import PocketBase
 
+from pocketbase import PocketBase
 from tests.prep import ensure_pocketbase_executable
 
 
@@ -25,7 +25,7 @@ def executable() -> Path:
 
 
 @pytest.fixture(scope="session")
-def admin() -> tuple[str, str]:
+def superuser() -> tuple[str, str]:
     return (f"{secrets.token_urlsafe(6)}@test.com", secrets.token_urlsafe(12))
 
 
@@ -35,7 +35,7 @@ def port() -> int:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def process(admin: tuple[str, str], port: int, executable: Path, tmpdir_factory) -> Generator[Popen, None, None]:
+def process(superuser: tuple[str, str], port: int, executable: Path, tmpdir_factory) -> Generator[Popen, None, None]:
     directory = tmpdir_factory.mktemp("data")
     # Adding a --dev in the command below can be helpful when debugging tests
     p = Popen(
@@ -44,7 +44,7 @@ def process(admin: tuple[str, str], port: int, executable: Path, tmpdir_factory)
     )
     sleep(0.3)
     Popen(
-        args=["_", "admin", "create", admin[0], admin[1], f"--dir={directory}"],
+        args=["_", "superuser", "create", superuser[0], superuser[1], f"--dir={directory}"],
         executable=executable,
         stdout=DEVNULL,
         stderr=DEVNULL,
@@ -65,7 +65,7 @@ def client(client_url: str) -> PocketBase:
 
 
 @pytest.fixture()
-async def admin_client(client_url: str, admin: tuple[str, str]) -> PocketBase:
+async def superuser_client(client_url: str, superuser: tuple[str, str]) -> PocketBase:
     pb = PocketBase(client_url)
-    await pb.admins.auth.with_password(*admin)
+    await pb.collection("_superusers").auth.with_password(*superuser)
     return pb

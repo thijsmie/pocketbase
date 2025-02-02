@@ -2,7 +2,7 @@ from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, cast
 from urllib.parse import quote
 
-from pocketbase.models.dtos import AuthMethods, AuthResult, ExternalAuthModel, Oauth2Payload, Record
+from pocketbase.models.dtos import AuthMethods, AuthResult, Oauth2Payload, OTPResult, Record
 from pocketbase.models.options import CommonOptions, SendOptions
 from pocketbase.services.base import Service
 from pocketbase.services.crud import CrudService
@@ -77,16 +77,21 @@ class RecordAuthService(Service):
         if options:
             send_options.update(options)
 
-        result: AuthMethods = await self._send("/auth-methods", send_options)  # type: ignore
-        result["usernamePassword"] = result.get("usernamePassword", False)
-        result["emailPassword"] = result.get("emailPassword", False)
-        result["authProviders"] = result.get("authProviders", [])
-        return result
+        return await self._send("/auth-methods", send_options)  # type: ignore
 
     async def with_password(
-        self, username_or_email: str, password: str, options: CommonOptions | None = None
+        self,
+        username_or_email: str,
+        password: str,
+        identity_field: str | None = None,
+        options: CommonOptions | None = None,
     ) -> AuthResult:
-        send_options: SendOptions = {"method": "POST", "body": {"identity": username_or_email, "password": password}}
+        body = {"identity": username_or_email, "password": password}
+
+        if identity_field:
+            body["identityField"] = identity_field
+
+        send_options: SendOptions = {"method": "POST", "body": body}  # type: ignore
 
         if options:
             send_options.update(options)
@@ -95,7 +100,7 @@ class RecordAuthService(Service):
         self._in.auth.set_user(result)
         return result
 
-    async def with_OAuth2(self, payload: Oauth2Payload, options: CommonOptions | None = None) -> AuthResult:
+    async def with_oauth2(self, payload: Oauth2Payload, options: CommonOptions | None = None) -> AuthResult:
         send_options: SendOptions = {"method": "POST", "body": cast(BodyDict, payload)}
 
         if options:
@@ -104,6 +109,24 @@ class RecordAuthService(Service):
         result: AuthResult = await self._send("/auth-with-oauth2", send_options)  # type: ignore
         self._in.auth.set_user(result)
         return result
+
+    async def with_otp(self, otp_id: str, password: str, options: CommonOptions | None = None) -> AuthResult:
+        send_options: SendOptions = {"method": "POST", "body": {"otpId": otp_id, "password": password}}
+
+        if options:
+            send_options.update(options)
+
+        result: AuthResult = await self._send("/auth-with-otp", send_options)  # type: ignore
+        self._in.auth.set_user(result)
+        return result
+
+    async def request_otp(self, email: str, option: CommonOptions | None = None) -> OTPResult:
+        send_options: SendOptions = {"method": "POST", "body": {"email": email}}
+
+        if option:
+            send_options.update(option)
+
+        return await self._send("/request-otp", send_options)  # type: ignore
 
     async def refresh(self, options: CommonOptions | None = None) -> AuthResult:
         send_options: SendOptions = {"method": "POST"}
@@ -117,20 +140,19 @@ class RecordAuthService(Service):
         self._in.auth.set_user(result)
         return result
 
-    async def list_external_auths(
-        self, record_id: str, options: CommonOptions | None = None
-    ) -> list[ExternalAuthModel]:
-        send_options: SendOptions = {"method": "GET"}
+    async def impersonate(
+        self, record_id: str, duration: int | None = None, options: CommonOptions | None = None
+    ) -> AuthResult:
+        body = {}
+
+        if duration:
+            body["duration"] = duration
+
+        send_options: SendOptions = {"method": "POST", "body": body}  # type: ignore
 
         if options:
             send_options.update(options)
 
-        return await self._send(f"/records/{quote(record_id)}/external-auths", send_options)  # type: ignore
-
-    async def unlink_external_auth(self, record_id: str, provider: str, options: CommonOptions | None = None) -> None:
-        send_options: SendOptions = {"method": "DELETE"}
-
-        if options:
-            send_options.update(options)
-
-        await self._send_noreturn(f"/records/{quote(record_id)}/external-auths/{quote(provider)}", send_options)
+        result: AuthResult = await self._send(f"/impersonate/{record_id}", send_options)  # type: ignore
+        self._in.auth.set_user(result)
+        return result

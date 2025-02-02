@@ -1,3 +1,5 @@
+# noqa: A005
+
 from datetime import UTC, datetime
 from typing import TypeAlias, cast
 
@@ -25,7 +27,7 @@ def transform(data: BodyDict) -> tuple[dict[str, JsonType], SendableFiles]:
                 data[key] = value.isoformat(timespec="milliseconds") + "Z"
             else:
                 data[key] = value.astimezone(UTC).isoformat(timespec="milliseconds").split("+")[0] + "Z"
-        elif isinstance(value, FileUpload):
+        elif isinstance(value, FileUpload) and value.files:
             files.extend((key, file) for file in value.files)
             del data[key]
 
