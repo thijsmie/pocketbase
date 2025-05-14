@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar, cast
+from typing import Generic, TypeVar
 from urllib.parse import quote
 
 from pocketbase.models.dtos import ListResult
@@ -22,30 +22,28 @@ class CrudService(Service, Generic[_T]):
         if options:
             send_options.update(options)
 
-        send_options["params"] = send_options.get("params", {})
+        send_options["params"] = send_options.get("params", {}).copy()
         send_options["params"]["page"] = page
         send_options["params"]["perPage"] = per_page
 
         if options and "filter" in options:
             send_options["params"]["filter"] = options["filter"]  # type: ignore
+            del send_options["filter"]  # type: ignore
 
         if options and "sort" in options:
             send_options["params"]["sort"] = options["sort"]  # type: ignore
+            del send_options["sort"]  # type: ignore
 
         return await self._send("", send_options)  # type: ignore
 
     async def get_full_list(self, options: FullListOptions | None = None) -> list[_T]:
         list_options: ListOptions = {}
-        if options and "batch" in options:
-            batch = options["batch"]
-            del options["batch"]
-        else:
-            batch = 500
+        batch = options.get("batch", 500) if options else 500
 
         if options:
             list_options.update(options)
 
-        list_options["params"] = list_options.get("params", {})
+        list_options["params"] = list_options.get("params", {}).copy()
         list_options["params"]["skipTotal"] = 1
 
         page = 1
@@ -60,8 +58,12 @@ class CrudService(Service, Generic[_T]):
         return items
 
     async def get_first(self, options: FirstOptions | None = None) -> _T:
-        list_options: ListOptions = cast(ListOptions, options) or {}
-        list_options["params"] = list_options.get("params", {})
+        list_options: ListOptions = {}
+
+        if options:
+            list_options.update(options)
+
+        list_options["params"] = list_options.get("params", {}).copy()
         list_options["params"]["skipTotal"] = 1
         result = await self.get_list(1, 1, list_options)
         if not result["items"]:
@@ -77,6 +79,7 @@ class CrudService(Service, Generic[_T]):
 
         if options:
             send_options.update(options)
+            send_options["params"] = send_options.get("params", {}).copy()
 
         return await self._send(f"/{quote(record_id)}", send_options)  # type: ignore
 
@@ -88,6 +91,7 @@ class CrudService(Service, Generic[_T]):
 
         if options:
             send_options.update(options)
+            send_options["params"] = send_options.get("params", {}).copy()
 
         return await self._send("", send_options)  # type: ignore
 
@@ -96,6 +100,7 @@ class CrudService(Service, Generic[_T]):
 
         if options:
             send_options.update(options)
+            send_options["params"] = send_options.get("params", {}).copy()
 
         return await self._send(f"/{quote(record_id)}", send_options)  # type: ignore
 
@@ -104,5 +109,6 @@ class CrudService(Service, Generic[_T]):
 
         if options:
             send_options.update(options)
+            send_options["params"] = send_options.get("params", {}).copy()
 
         await self._send_noreturn(f"/{quote(record_id)}", send_options)
