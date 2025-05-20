@@ -25,30 +25,6 @@ class CollectionField(TypedDict):
     required: bool
     presentable: bool
     options: dict[str, JsonType]
-    # additional fields: https://github.com/44ai-labs/pocketbase/blob/01be3cc23726335b1cf28f5f4f30ffa30feb256c/pocketbase/models/utils/collection_field.py
-    # used in pocketbase_orm
-    unique: bool
-    hidden: bool
-    max: NotRequired[int]
-    min: NotRequired[int]
-    pattern: NotRequired[str]
-    primary_key: bool
-    auto_generate_pattern: NotRequired[str]
-    onCreate: bool
-    onUpdate: bool
-    onlyInt: bool
-    exceptDomains: list[str]
-    onlyDomains: list[str]
-    maxSize: NotRequired[int]
-    cascadeDelete: bool
-    collectionId: NotRequired[str]
-    maxSelect: NotRequired[int]
-    minSelect: NotRequired[int]
-    mimeTypes: list[str]
-    protected: bool
-    thumbs: list[str]
-    values: list[str]
-    cost: NotRequired[int]
 
 
 class CollectionModel(BaseDict):
