@@ -17,7 +17,7 @@ class BaseDict(TypedDict):
     id: str
 
 
-class SchemaField:
+class CollectionField(TypedDict):
     id: str
     name: str
     type: str
@@ -30,7 +30,7 @@ class SchemaField:
 class CollectionModel(BaseDict):
     name: str
     type: str
-    schema: list[SchemaField]
+    fields: list[CollectionField]
     indexes: list[str]
     system: bool
     options: dict[str, JsonType]
@@ -44,7 +44,7 @@ class CollectionModel(BaseDict):
 class Collection(TypedDict, total=False):
     name: str
     type: str
-    schema: list[SchemaField]
+    fields: list[CollectionField]
     indexes: list[str]
     system: bool
     options: dict[str, JsonType]
