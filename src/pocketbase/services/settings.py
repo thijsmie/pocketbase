@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from pocketbase.models.errors import PocketBaseError
 from pocketbase.models.options import CommonOptions, SendOptions
 from pocketbase.services.base import Service
 from pocketbase.utils.types import BodyDict
@@ -101,7 +102,8 @@ class SettingsService(Service):
         if isinstance(response, dict) and "secret" in response and isinstance(response["secret"], str):
             return response["secret"]
         else:
-            # Handle unexpected response structure, though _send is expected to parse JSON
-            # Or, if _send already raises an error for non-2xx, this might not be strictly needed.
-            # Assuming a valid response contains the "secret" key with a string value.
-            raise ValueError("Failed to generate Apple client secret or unexpected response format.")
+            raise PocketBaseError(
+                "/apple/generate-client-secret",
+                500,
+                "Failed to generate Apple client secret or unexpected response format.",
+            )
