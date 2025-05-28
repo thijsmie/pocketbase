@@ -8,6 +8,7 @@ from pocketbase.services.health import HealthService
 from pocketbase.services.log import LogService
 from pocketbase.services.realtime import RealtimeService
 from pocketbase.services.record import RecordService
+from pocketbase.services.settings import SettingsService
 
 
 class PocketBaseInners:
@@ -30,6 +31,7 @@ class PocketBase:
         self._realtime_service: RealtimeService = RealtimeService(self, self._inners)
         self._health_service: HealthService = HealthService(self, self._inners)
         self._backup_service: BackupService = BackupService(self, self._inners)
+        self._settings: SettingsService = SettingsService(self, self._inners)
         self._collections: dict[str, RecordService] = {}
 
     def headers(self) -> dict[str, str]:
