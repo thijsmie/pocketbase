@@ -24,6 +24,7 @@ class BackupService(Service):
 
         if options:
             send_options.update(options)
+            send_options["params"] = send_options.get("params", {}).copy()
 
         backups = await self._send("", send_options)
         return cast(list[BackupFileInfo], backups)
@@ -36,6 +37,7 @@ class BackupService(Service):
 
         if options:
             send_options.update(options)
+            send_options["params"] = send_options.get("params", {}).copy()
 
         await self._send_noreturn("", send_options)
 
@@ -47,6 +49,7 @@ class BackupService(Service):
 
         if options:
             send_options.update(options)
+            send_options["params"] = send_options.get("params", {}).copy()
 
         await self._send_noreturn("/upload", send_options)
 
@@ -55,6 +58,7 @@ class BackupService(Service):
 
         if options:
             send_options.update(options)
+            send_options["params"] = send_options.get("params", {}).copy()
 
         await self._send_noreturn(f"/{quote(key)}", send_options)
 
@@ -63,6 +67,7 @@ class BackupService(Service):
 
         if options:
             send_options.update(options)
+            send_options["params"] = send_options.get("params", {}).copy()
 
         send_options["params"] = send_options.get("params", {})
         send_options["params"]["token"] = await self._pb.files.get_token()
@@ -78,6 +83,7 @@ class BackupService(Service):
 
         if options:
             send_options.update(options)
+            send_options["params"] = send_options.get("params", {}).copy()
 
         await self._send_noreturn(f"/{quote(key)}/restore", send_options)
 

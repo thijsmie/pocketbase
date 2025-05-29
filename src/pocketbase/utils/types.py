@@ -1,5 +1,3 @@
-# noqa: A005
-
 from datetime import UTC, datetime
 from typing import TypeAlias, cast
 
