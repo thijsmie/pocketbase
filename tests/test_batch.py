@@ -212,3 +212,31 @@ async def test_batch_with_files(superuser_client: PocketBase, activate_batch_api
             break
     rel = await col.get_one(result[0]["body"]["id"])
     assert len(rel["image"]) == 3
+
+
+async def test_batch_iteration(superuser_client: PocketBase, collection: CollectionModel, activate_batch_api):
+    col = superuser_client.collection(collection["id"])
+    batch = superuser_client.batch
+    col_id = collection["id"]
+
+    # create 10 records
+    for i in range(10):
+        batch.collection(col_id).create(
+            {
+                "title": f"record {i}",
+            }
+        )
+    await batch.send()
+
+    for i in range(10, 20):
+        batch.collection(col_id).create(
+            {
+                "title": f"record {i}",
+            }
+        )
+    await batch.send()
+
+    # iterate over all records
+    items = await col.get_full_list()
+
+    assert len(items) == 20
