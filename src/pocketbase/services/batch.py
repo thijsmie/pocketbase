@@ -90,6 +90,7 @@ class BatchService(Service):
                 "body": item.get("body", {}),  #  type: ignore
             }
             result.append(result_item)
+        self._requests.clear()
         return result
 
 
