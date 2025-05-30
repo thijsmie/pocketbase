@@ -2,6 +2,7 @@ from httpx import AsyncClient, Request, Response
 
 from pocketbase.services.authorization import AuthStore
 from pocketbase.services.backup import BackupService
+from pocketbase.services.batch import BatchService
 from pocketbase.services.collection import CollectionService
 from pocketbase.services.file import FileService
 from pocketbase.services.health import HealthService
@@ -32,6 +33,7 @@ class PocketBase:
         self._health_service: HealthService = HealthService(self, self._inners)
         self._backup_service: BackupService = BackupService(self, self._inners)
         self._settings: SettingsService = SettingsService(self, self._inners)
+        self._batch: BatchService = BatchService(self, self._inners)
         self._collections: dict[str, RecordService] = {}
 
     def headers(self) -> dict[str, str]:
@@ -70,6 +72,10 @@ class PocketBase:
     @property
     def settings(self) -> SettingsService:
         return self._settings
+
+    @property
+    def batch(self) -> BatchService:
+        return self._batch
 
     def collection(self, id_or_name: str) -> RecordService:
         if id_or_name not in self._collections:
