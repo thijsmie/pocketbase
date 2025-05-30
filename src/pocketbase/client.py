@@ -67,6 +67,10 @@ class PocketBase:
     def backups(self) -> BackupService:
         return self._backup_service
 
+    @property
+    def settings(self) -> SettingsService:
+        return self._settings
+
     def collection(self, id_or_name: str) -> RecordService:
         if id_or_name not in self._collections:
             self._collections[id_or_name] = RecordService(self, self._inners, id_or_name)
