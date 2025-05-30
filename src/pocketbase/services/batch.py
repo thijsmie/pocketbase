@@ -15,8 +15,6 @@ class BatchRequest(TypedDict, total=False):
     method: Literal["GET", "POST", "PUT", "PATCH", "DELETE"]
     headers: dict[str, str] | None
     body: BodyDict
-    # files: SendableFiles | None
-    # are treated seperately in the `send` method
 
 
 class BatchRequestResult(TypedDict, total=False):
