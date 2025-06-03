@@ -77,6 +77,9 @@ class PocketBase:
     def batch(self) -> BatchService:
         return self._batch
 
+    def batched(self) -> BatchService:
+        return self._batch
+
     def collection(self, id_or_name: str) -> RecordService:
         if id_or_name not in self._collections:
             self._collections[id_or_name] = RecordService(self, self._inners, id_or_name)
