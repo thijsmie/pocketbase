@@ -1,3 +1,4 @@
+import asyncio
 from uuid import uuid4
 
 import pytest
@@ -5,6 +6,7 @@ import pytest
 from pocketbase import PocketBase
 from pocketbase.models.dtos import Record
 from pocketbase.models.errors import PocketBaseError
+from tests.conftest import SMTP_HOST, SMTP_PORT
 
 
 @pytest.fixture
@@ -20,6 +22,19 @@ async def user(superuser_client: PocketBase) -> tuple[Record, str, str]:
         }
     )
     return email, password
+
+
+@pytest.fixture
+async def set_smtp_server(superuser_client: PocketBase):
+    await superuser_client._settings.update(
+        body={
+            "smtp": {
+                "enabled": True,
+                "host": SMTP_HOST,
+                "port": SMTP_PORT,
+            }
+        }
+    )
 
 
 async def test_login_user(client: PocketBase, user: tuple[str, str]):
@@ -55,3 +70,13 @@ async def test_list_auth_methods(client: PocketBase):
     assert isinstance(val["oauth2"]["enabled"], bool)
     assert isinstance(val["oauth2"]["providers"], list)
     assert isinstance(val["mfa"]["enabled"], bool)
+
+
+async def test_request_password_reset(client: PocketBase, user: tuple[str, str], smtp_server, set_smtp_server):
+    email = user[0]
+    await client.collection("users").auth.request_password_reset(email)
+    await asyncio.sleep(1)  # Wait for MFA OTP email
+    messages = smtp_server["handler"].messages
+    assert len(messages) > 0, "No password reset request received"
+    email_content = messages[-1].content.decode()
+    assert ">Reset password<" in email_content, "Password reset link not found in email content"
