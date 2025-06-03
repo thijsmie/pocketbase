@@ -68,7 +68,7 @@ def process(superuser: tuple[str, str], port: int, executable: Path, tmpdir_fact
     directory = tmpdir_factory.mktemp("data")
     # Adding a --dev in the command below can be helpful when debugging tests
     p = Popen(
-        args=["_", "serve", f"--dir={directory}", f"--http=127.0.0.1:{port}", "--dev"],
+        args=["_", "serve", f"--dir={directory}", f"--http=127.0.0.1:{port}"],
         executable=executable,
     )
     sleep(0.3)

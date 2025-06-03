@@ -40,7 +40,6 @@ class Service:
         try:
             return response.json()
         except ValueError as e:
-            print(f"Invalid JSON response from {response.url}: {response.text}")
             raise PocketBaseError(str(response.url), response.status_code, "PocketBase returned invalid JSON") from e
 
     async def _send_noreturn(self, path: str, options: SendOptions) -> None:

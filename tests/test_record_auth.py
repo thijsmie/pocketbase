@@ -75,7 +75,7 @@ async def test_list_auth_methods(client: PocketBase):
 async def test_request_password_reset(client: PocketBase, user: tuple[str, str], smtp_server, set_smtp_server):
     email = user[0]
     await client.collection("users").auth.request_password_reset(email)
-    await asyncio.sleep(1)  # Wait for MFA OTP email
+    await asyncio.sleep(1)
     messages = smtp_server["handler"].messages
     assert len(messages) > 0, "No password reset request received"
     email_content = messages[-1].content.decode()
