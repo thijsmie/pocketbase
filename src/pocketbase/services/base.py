@@ -31,13 +31,16 @@ class Service:
 
         return response
 
-    async def _send(self, path: str, options: SendOptions) -> JsonType:
+    async def _send(self, path: str, options: SendOptions, expect_json: bool = True) -> JsonType | None:
         response = await self._send_raw(path, options)
         PocketBaseError.raise_for_status(response)
 
+        if not expect_json:
+            return None
         try:
             return response.json()
         except ValueError as e:
+            print(f"Invalid JSON response from {response.url}: {response.text}")
             raise PocketBaseError(str(response.url), response.status_code, "PocketBase returned invalid JSON") from e
 
     async def _send_noreturn(self, path: str, options: SendOptions) -> None:
