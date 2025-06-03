@@ -1,5 +1,5 @@
 import json
-from typing import TYPE_CHECKING, Literal, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, TypedDict
 from urllib.parse import quote
 
 from pocketbase.models.options import CommonOptions, SendOptions
@@ -32,6 +32,18 @@ class BatchService(Service):
         super().__init__(pocketbase, inners)
         self._requests: list[BatchRequest] = []
         self._subs: dict[str, SubBatchService] = {}
+
+    # we can use it with `async with` syntax
+    async def __aenter__(self) -> "BatchService":
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: Any,
+    ) -> None:
+        return None
 
     def collection(self, collection_name: str) -> "SubBatchService":
         """
