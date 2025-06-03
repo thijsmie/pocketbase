@@ -156,3 +156,11 @@ class RecordAuthService(Service):
         result: AuthResult = await self._send(f"/impersonate/{record_id}", send_options)  # type: ignore
         self._in.auth.set_user(result)
         return result
+
+    async def request_password_reset(self, email: str, options: CommonOptions | None = None) -> None:
+        send_options: SendOptions = {"method": "POST", "body": {"email": email}}
+
+        if options:
+            send_options.update(options)
+
+        await self._send("/request-password-reset", send_options, expect_json=False)
