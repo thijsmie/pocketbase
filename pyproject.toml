@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pocketbase-async"
-version = "0.12.0"
+version = "0.12.1"
 description = "Async pocketbase SDK for Python"
 repository = "https://github.com/thijsmie/pocketbase-async"
 authors = ["Thijs Miedema <opensource@tmiedema.com>"]
@@ -27,7 +27,7 @@ httpx-sse = ">=0.4.0,<1"
 pytest = "^8.3.2"
 pytest-cov = "^6.0.0"
 pytest-asyncio = ">=0.21.0,<1"
-ruff = "0.9.*"
+ruff = "0.11.*"
 mypy = "^1.1.1"
 
 [build-system]

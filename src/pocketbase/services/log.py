@@ -43,7 +43,7 @@ class LogService(Service):
             send_options.update(options)
 
             if "filter" in options:
-                send_options["params"] = send_options.get("params", {})
+                send_options["params"] = send_options.get("params", {}).copy()
                 send_options["params"]["filter"] = options["filter"]
 
         return await self._send("/stats", send_options)  # type: ignore
