@@ -1,3 +1,4 @@
+import asyncio
 from uuid import uuid4
 
 import pytest
@@ -55,3 +56,13 @@ async def test_list_auth_methods(client: PocketBase):
     assert isinstance(val["oauth2"]["enabled"], bool)
     assert isinstance(val["oauth2"]["providers"], list)
     assert isinstance(val["mfa"]["enabled"], bool)
+
+
+async def test_request_password_reset(client: PocketBase, user: tuple[str, str], smtp_server):
+    email = user[0]
+    await client.collection("users").auth.request_password_reset(email)
+    await asyncio.sleep(1)
+    messages = smtp_server["handler"].messages
+    assert len(messages) > 0, "No password reset request received"
+    email_content = messages[-1].content.decode()
+    assert ">Reset password<" in email_content, "Password reset link not found in email content"

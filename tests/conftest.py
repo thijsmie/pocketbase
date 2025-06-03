@@ -1,15 +1,53 @@
 import secrets
 import socket
-from collections.abc import Generator
+from collections.abc import AsyncGenerator, Generator
 from contextlib import closing
 from pathlib import Path
 from subprocess import DEVNULL, Popen
 from time import sleep
 
 import pytest
+from aiosmtpd.controller import Controller
 
 from pocketbase import PocketBase
 from tests.prep import ensure_pocketbase_executable
+
+SMTP_HOST = "localhost"
+
+
+class MessageHandler:
+    def __init__(self):
+        self.messages = []
+
+    async def handle_DATA(self, _server, _session, envelope):
+        self.messages.append(envelope)
+        return "250 Message accepted for delivery"
+
+
+@pytest.fixture(scope="function")
+async def smtp_server(superuser_client: PocketBase, port_smtp: int) -> AsyncGenerator[MessageHandler, None, None]:
+    handler = MessageHandler()
+    controller = Controller(handler, hostname=SMTP_HOST, port=port_smtp)
+    controller.start()
+
+    await superuser_client._settings.update(
+        body={
+            "smtp": {
+                "enabled": True,
+                "host": SMTP_HOST,
+                "port": port_smtp,
+            }
+        }
+    )
+
+    try:
+        yield {
+            "host": SMTP_HOST,
+            "port": port_smtp,
+            "handler": handler,
+        }
+    finally:
+        controller.stop()
 
 
 def find_free_port() -> int:
@@ -31,6 +69,11 @@ def superuser() -> tuple[str, str]:
 
 @pytest.fixture(scope="session")
 def port() -> int:
+    return find_free_port()
+
+
+@pytest.fixture(scope="session")
+def port_smtp() -> int:
     return find_free_port()
 
 
