@@ -22,6 +22,11 @@ async def create_file_collection(superuser_client: PocketBase):
                 "text/plain",
             ],
         },
+        {
+            "name": "test_json",
+            "type": "json",
+            "required": False,
+        },
     ]
 
     return await superuser_client.collections.create(
@@ -50,6 +55,38 @@ async def test_create_three_file_record(superuser_client: PocketBase):
                 (name2 + ".txt", bcontent, "application/octet-stream"),
                 (name3 + ".txt", ccontent, "text/plain"),
             ),
+        }
+    )
+    assert len(record["image"]) == 3
+    for fn in record["image"]:
+        if fn.startswith(name2):
+            break
+
+    rel = await col.get_one(record["id"])
+    assert len(rel["image"]) == 3
+
+    rcontent = await superuser_client.files.download_file(coll["id"], rel["id"], fn)
+    assert rcontent == bcontent
+
+
+async def test_create_file_record_and_dict(superuser_client: PocketBase):
+    coll = await create_file_collection(superuser_client)
+    col = superuser_client.collection(coll["id"])
+    name1 = uuid4().hex
+    name2 = uuid4().hex
+    name3 = uuid4().hex
+    acontent = uuid4().hex
+    bcontent = getrandbits(1024 * 8).to_bytes(1024, "little")
+    ccontent = uuid4().hex
+    record = await col.create(
+        {
+            "title": uuid4().hex,
+            "image": FileUpload(
+                (name1 + ".txt", acontent, "text/plain"),
+                (name2 + ".txt", bcontent, "application/octet-stream"),
+                (name3 + ".txt", ccontent, "text/plain"),
+            ),
+            "test_json": {"key1": "value1", "key2": "value2", "key3": [1, 2, 3]},
         }
     )
     assert len(record["image"]) == 3
