@@ -1,3 +1,4 @@
+import json
 from typing import TYPE_CHECKING
 
 from httpx import Request, Response
@@ -66,11 +67,16 @@ class Service:
             data, sfiles = transform(body)
             files.extend(sfiles)
 
+        # convert the casted data back to str (happens inside transform)
+        for key, value in (data or {}).items():
+            if isinstance(value, dict | list):
+                data[key] = json.dumps(value)  # type: ignore
+
         return self._in.client.build_request(
             url=self._build_url(path),
             method=options.get("method", "GET"),
             json=body,
-            data=data,
+            data=data,  # on multipart with files we have to send it via data
             files=files,  # type: ignore
             params=options.get("params"),
             headers=headers,
