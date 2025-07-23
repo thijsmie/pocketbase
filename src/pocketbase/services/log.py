@@ -6,11 +6,34 @@ from pocketbase.services.base import Service
 
 
 class LogService(Service):
+    """Service for accessing application logs and statistics.
+
+    This service provides methods to retrieve application logs and log statistics
+    from the PocketBase instance.
+    """
+
     __base_sub_path__ = "/api/logs"
 
     async def get_list(
         self, page: int = 1, per_page: int = 30, options: ListOptions | None = None
     ) -> ListResult[LogModel]:
+        """Retrieve a paginated list of log entries.
+
+        Args:
+            page: Page number (1-based, defaults to 1)
+            per_page: Number of log entries per page (defaults to 30)
+            options: Additional options like filters and sorting
+
+        Returns:
+            ListResult containing log entries and pagination info
+
+        Example:
+            ```python
+            logs = await pb.logs.get_list(page=1, per_page=50)
+            for log in logs['items']:
+                print(f"{log['created']}: {log['message']}")
+            ```
+        """
         send_options: SendOptions = {"method": "GET"}
 
         if options:
@@ -29,6 +52,21 @@ class LogService(Service):
         return await self._send("", send_options)  # type: ignore
 
     async def get_one(self, record_id: str, options: CommonOptions | None = None) -> LogModel:
+        """Retrieve a specific log entry by its ID.
+
+        Args:
+            record_id: The unique identifier of the log entry
+            options: Additional request parameters
+
+        Returns:
+            The log entry with the specified ID
+
+        Example:
+            ```python
+            log = await pb.logs.get_one('LOG_ENTRY_ID')
+            print(f"Log message: {log['message']}")
+            ```
+        """
         send_options: SendOptions = {"method": "GET"}
 
         if options:
@@ -37,6 +75,21 @@ class LogService(Service):
         return await self._send(f"/{quote(record_id)}", send_options)  # type: ignore
 
     async def get_stats(self, options: LogStatsOptions | None = None) -> list[HourlyStats]:
+        """Get hourly statistics for log entries.
+
+        Args:
+            options: Options including filters for the statistics
+
+        Returns:
+            List of hourly statistics showing log activity
+
+        Example:
+            ```python
+            stats = await pb.logs.get_stats()
+            for stat in stats:
+                print(f"Hour {stat['hour']}: {stat['total']} entries")
+            ```
+        """
         send_options: SendOptions = {"method": "GET"}
 
         if options:

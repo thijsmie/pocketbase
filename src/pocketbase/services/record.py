@@ -14,6 +14,12 @@ if TYPE_CHECKING:
 
 
 class RecordService(CrudService[Record]):
+    """Service for managing records in a specific collection.
+
+    This service provides CRUD operations and real-time subscriptions for records
+    in a particular collection. It inherits all standard CRUD methods from CrudService.
+    """
+
     __base_sub_path__: str
 
     def __init__(self, pocketbase: "PocketBase", inners: "PocketBaseInners", collection: str) -> None:
@@ -24,6 +30,11 @@ class RecordService(CrudService[Record]):
 
     @property
     def auth(self) -> "RecordAuthService":
+        """Access authentication operations for this collection.
+
+        Returns:
+            RecordAuthService for authentication operations like login, signup, etc.
+        """
         return self._auth
 
     async def subscribe(
@@ -67,11 +78,33 @@ class RecordService(CrudService[Record]):
 
 
 class RecordAuthService(Service):
+    """Service for handling authentication operations on a specific collection.
+
+    This service provides methods for user authentication including password-based login,
+    OAuth2, OTP (One-Time Password), and other authentication features.
+    """
+
     def __init__(self, pocketbase: "PocketBase", inners: "PocketBaseInners", collection: str) -> None:
         super().__init__(pocketbase, inners)
         self.__base_sub_path__ = f"/api/collections/{quote(collection)}"
 
     async def methods(self, options: CommonOptions | None = None) -> AuthMethods:
+        """Get available authentication methods for this collection.
+
+        Args:
+            options: Additional request parameters
+
+        Returns:
+            AuthMethods object containing available authentication options
+
+        Example:
+            ```python
+            methods = await pb.collection('users').auth.methods()
+            if methods['password']['enabled']:
+                # Password authentication is available
+                pass
+            ```
+        """
         send_options: SendOptions = {"method": "GET"}
 
         if options:
@@ -86,6 +119,27 @@ class RecordAuthService(Service):
         identity_field: str | None = None,
         options: CommonOptions | None = None,
     ) -> AuthResult:
+        """Authenticate using username/email and password.
+
+        Args:
+            username_or_email: The username or email address
+            password: The password
+            identity_field: Specific identity field to use (optional)
+            options: Additional request parameters
+
+        Returns:
+            AuthResult containing the authentication token and user record
+
+        Example:
+            ```python
+            result = await pb.collection('users').auth.with_password(
+                'user@example.com',
+                'password123'
+            )
+            print(f"Token: {result['token']}")
+            print(f"User: {result['record']}")
+            ```
+        """
         body = {"identity": username_or_email, "password": password}
 
         if identity_field:
@@ -101,6 +155,25 @@ class RecordAuthService(Service):
         return result
 
     async def with_oauth2(self, payload: Oauth2Payload, options: CommonOptions | None = None) -> AuthResult:
+        """Authenticate using OAuth2.
+
+        Args:
+            payload: OAuth2 authentication payload containing provider, code, etc.
+            options: Additional request parameters
+
+        Returns:
+            AuthResult containing the authentication token and user record
+
+        Example:
+            ```python
+            result = await pb.collection('users').auth.with_oauth2({
+                'provider': 'google',
+                'code': 'oauth_code',
+                'codeVerifier': 'verifier',
+                'redirectUrl': 'http://localhost:3000/callback'
+            })
+            ```
+        """
         send_options: SendOptions = {"method": "POST", "body": cast(BodyDict, payload)}
 
         if options:
@@ -111,6 +184,28 @@ class RecordAuthService(Service):
         return result
 
     async def with_otp(self, otp_id: str, password: str, options: CommonOptions | None = None) -> AuthResult:
+        """Authenticate using a One-Time Password (OTP).
+
+        Args:
+            otp_id: The OTP identifier received from request_otp()
+            password: The OTP password/code
+            options: Additional request parameters
+
+        Returns:
+            AuthResult containing the authentication token and user record
+
+        Example:
+            ```python
+            # First request an OTP
+            otp_result = await pb.collection('users').auth.request_otp('user@example.com')
+
+            # Then authenticate with the OTP
+            result = await pb.collection('users').auth.with_otp(
+                otp_result['otpId'],
+                'received_otp_code'
+            )
+            ```
+        """
         send_options: SendOptions = {"method": "POST", "body": {"otpId": otp_id, "password": password}}
 
         if options:
@@ -121,6 +216,22 @@ class RecordAuthService(Service):
         return result
 
     async def request_otp(self, email: str, option: CommonOptions | None = None) -> OTPResult:
+        """Request a One-Time Password to be sent to the specified email.
+
+        Args:
+            email: The email address to send the OTP to
+            option: Additional request parameters
+
+        Returns:
+            OTPResult containing the OTP identifier
+
+        Example:
+            ```python
+            otp_result = await pb.collection('users').auth.request_otp('user@example.com')
+            # User will receive an email with OTP code
+            # Use otp_result['otpId'] with with_otp() method
+            ```
+        """
         send_options: SendOptions = {"method": "POST", "body": {"email": email}}
 
         if option:
@@ -129,6 +240,20 @@ class RecordAuthService(Service):
         return await self._send("/request-otp", send_options)  # type: ignore
 
     async def refresh(self, options: CommonOptions | None = None) -> AuthResult:
+        """Refresh the current authentication token.
+
+        Args:
+            options: Additional request parameters
+
+        Returns:
+            AuthResult with the new authentication token and user record
+
+        Example:
+            ```python
+            # Refresh the current session
+            result = await pb.collection('users').auth.refresh()
+            ```
+        """
         send_options: SendOptions = {"method": "POST"}
 
         if options:
@@ -143,6 +268,28 @@ class RecordAuthService(Service):
     async def impersonate(
         self, record_id: str, duration: int | None = None, options: CommonOptions | None = None
     ) -> AuthResult:
+        """Impersonate another user (admin only).
+
+        Args:
+            record_id: The ID of the user record to impersonate
+            duration: How long the impersonation should last (in seconds)
+            options: Additional request parameters
+
+        Returns:
+            AuthResult with the impersonation token and target user record
+
+        Note:
+            This method is typically only available to admin users.
+
+        Example:
+            ```python
+            # Impersonate user for 1 hour (3600 seconds)
+            result = await pb.collection('users').auth.impersonate(
+                'USER_ID',
+                duration=3600
+            )
+            ```
+        """
         body = {}
 
         if duration:

@@ -1,0 +1,81 @@
+site_name: PocketBase Async
+site_description: An async Python client for PocketBase
+site_url: https://github.com/thijsmie/pocketbase-async
+repo_url: https://github.com/thijsmie/pocketbase-async
+repo_name: thijsmie/pocketbase-async
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.tabs
+    - navigation.top
+    - search.highlight
+    - search.share
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path: ['.']
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+  - autorefs
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            show_root_toc_entry: true
+            heading_level: 2
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quick-start.md
+    - Basic Usage: getting-started/basic-usage.md
+  - API Reference:
+    - Client: api/client.md
+    - Collections: api/collections.md
+    - Records: api/records.md
+    - Authentication: api/authentication.md
+    - Files: api/files.md
+    - Real-time: api/realtime.md
+    - Health: api/health.md
+    - Logs: api/logs.md
+    - Backups: api/backups.md
+  - Examples:
+    - Hello World: examples/hello-world.md
+    - Working with Files: examples/files.md
+    - Real-time Updates: examples/realtime.md
+  - Contributing: contributing.md
+
+watch:
+  - src/pocketbase

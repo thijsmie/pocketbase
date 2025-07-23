@@ -17,9 +17,30 @@ class BackupFileInfo(TypedDict):
 
 
 class BackupService(Service):
+    """Service for creating and managing database backups.
+
+    This service provides methods to create, upload, download, delete, and restore
+    database backups for the PocketBase instance.
+    """
+
     __base_sub_path__ = "/api/backups"
 
     async def get_full_list(self, options: CommonOptions | None = None) -> list[BackupFileInfo]:
+        """Get a list of all available backup files.
+
+        Args:
+            options: Additional request parameters
+
+        Returns:
+            List of backup file information including name, size, and modification date
+
+        Example:
+            ```python
+            backups = await pb.backups.get_full_list()
+            for backup in backups:
+                print(f"Backup: {backup['key']}, Size: {backup['size']} bytes")
+            ```
+        """
         send_options: SendOptions = {"method": "GET"}
 
         if options:

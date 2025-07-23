@@ -23,6 +23,12 @@ Callback = Callable[[RealtimeEvent], Awaitable[None]]
 
 
 class RealtimeService(Service):
+    """Service for real-time subscriptions to data changes.
+
+    This service allows you to subscribe to live updates when records are created,
+    updated, or deleted in PocketBase collections.
+    """
+
     __base_sub_path__ = "/api/realtime"
 
     def __init__(self, pocketbase: "PocketBase", inners: "PocketBaseInners") -> None:
@@ -93,6 +99,35 @@ class RealtimeService(Service):
     async def subscribe(
         self, topic: str, callback: Callback, options: CommonOptions | None = None
     ) -> Callable[[], Awaitable[None]]:
+        """Subscribe to real-time updates for a specific topic.
+
+        Args:
+            topic: The topic to subscribe to (e.g., collection name or "collection/record_id")
+            callback: Async function to call when updates occur
+            options: Additional options like query parameters or headers
+
+        Returns:
+            An async function to call to unsubscribe from the topic
+
+        Example:
+            ```python
+            async def handle_update(event):
+                print(f"Action: {event['action']}")
+                print(f"Record: {event['record']}")
+
+            # Subscribe to all records in 'posts' collection
+            unsubscribe = await pb.realtime.subscribe('posts', handle_update)
+
+            # Subscribe to specific record
+            unsubscribe_record = await pb.realtime.subscribe(
+                'posts/RECORD_ID',
+                handle_update
+            )
+
+            # Later, unsubscribe
+            await unsubscribe()
+            ```
+        """
         key = quote(topic)
 
         if options:
@@ -115,6 +150,14 @@ class RealtimeService(Service):
         return unsubscribe
 
     async def close(self) -> None:
+        """Close the real-time connection and cancel all subscriptions.
+
+        Example:
+            ```python
+            # Close all real-time connections
+            await pb.realtime.close()
+            ```
+        """
         if self._connection:
             self._connection.cancel()
             with suppress(asyncio.CancelledError):
