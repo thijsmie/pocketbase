@@ -123,7 +123,7 @@ async def test_get_all_oauth2_providers(superuser_client: PocketBase):
 async def test_dry_run_view_query(superuser_client: PocketBase):
     _, name = await create_collection(superuser_client)
     await superuser_client.collection(name).create({"title": "a" * 12})
-    result = await superuser_client.collections.dry_run_view_query(f"SELECT id, title FROM {name}")
+    result = await superuser_client.collections.dry_run_view_query(f"SELECT id, title FROM `{name}`")
     assert {f["name"] for f in result["fields"]} == {"id", "title"}
     assert result["sample"][0]["title"] == "a" * 12
 

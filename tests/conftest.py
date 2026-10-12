@@ -1,11 +1,12 @@
 import secrets
 import socket
 from collections.abc import Generator
-from contextlib import closing
+from contextlib import closing, suppress
 from pathlib import Path
-from subprocess import DEVNULL, Popen
+from subprocess import DEVNULL, Popen, check_call
 from time import sleep
 
+import httpx
 import pytest
 
 from pocketbase import PocketBase
@@ -37,18 +38,22 @@ def port() -> int:
 @pytest.fixture(scope="session", autouse=True)
 def process(superuser: tuple[str, str], port: int, executable: Path, tmpdir_factory) -> Generator[Popen, None, None]:
     directory = tmpdir_factory.mktemp("data")
+    # Create the superuser before starting the server, running both at once can fail with SQLITE_BUSY
+    check_call(
+        args=["_", "superuser", "create", superuser[0], superuser[1], f"--dir={directory}"],
+        executable=executable,
+        stdout=DEVNULL,
+    )
     # Adding a --dev in the command below can be helpful when debugging tests
     p = Popen(
         args=["_", "serve", f"--dir={directory}", f"--http=127.0.0.1:{port}"],
         executable=executable,
     )
-    sleep(0.3)
-    Popen(
-        args=["_", "superuser", "create", superuser[0], superuser[1], f"--dir={directory}"],
-        executable=executable,
-        stdout=DEVNULL,
-        stderr=DEVNULL,
-    ).communicate()
+    for _ in range(100):
+        with suppress(httpx.TransportError):
+            if httpx.get(f"http://127.0.0.1:{port}/api/health").status_code == 200:
+                break
+        sleep(0.1)
     yield p
     p.kill()
     p.communicate()
