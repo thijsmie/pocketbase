@@ -47,3 +47,12 @@ class LogService(Service):
                 send_options["params"]["filter"] = options["filter"]
 
         return await self._send("/stats", send_options)  # type: ignore
+
+    async def truncate(self, options: CommonOptions | None = None) -> None:
+        """Deletes all logs (requires PocketBase v0.40+)."""
+        send_options: SendOptions = {"method": "DELETE"}
+
+        if options:
+            send_options.update(options)
+
+        await self._send_noreturn("", send_options)

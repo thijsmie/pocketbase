@@ -18,3 +18,11 @@ async def test_get_logs(superuser_client: PocketBase):
     await superuser_client.logs.get_stats(options={"filter": 'data.auth!="superuser"'})
     assert logs["items"]
     assert logs["items"][0] == await superuser_client.logs.get_one(logs["items"][0]["id"])
+
+
+async def test_truncate_logs(superuser_client: PocketBase):
+    await superuser_client.logs.get_list()
+    await asyncio.sleep(4)
+    assert (await superuser_client.logs.get_list())["items"]
+    await superuser_client.logs.truncate()
+    assert not (await superuser_client.logs.get_list(options={"filter": "data.url!='/api/logs'"}))["items"]
