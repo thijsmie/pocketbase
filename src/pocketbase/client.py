@@ -9,6 +9,7 @@ from pocketbase.services.log import LogService
 from pocketbase.services.realtime import RealtimeService
 from pocketbase.services.record import RecordService
 from pocketbase.services.settings import SettingsService
+from pocketbase.services.sql import SQLService
 
 
 class PocketBaseInners:
@@ -32,6 +33,7 @@ class PocketBase:
         self._health_service: HealthService = HealthService(self, self._inners)
         self._backup_service: BackupService = BackupService(self, self._inners)
         self._settings: SettingsService = SettingsService(self, self._inners)
+        self._sql_service: SQLService = SQLService(self, self._inners)
         self._collections: dict[str, RecordService] = {}
 
     def headers(self) -> dict[str, str]:
@@ -66,6 +68,14 @@ class PocketBase:
     @property
     def backups(self) -> BackupService:
         return self._backup_service
+
+    @property
+    def settings(self) -> SettingsService:
+        return self._settings
+
+    @property
+    def sql(self) -> SQLService:
+        return self._sql_service
 
     def collection(self, id_or_name: str) -> RecordService:
         if id_or_name not in self._collections:

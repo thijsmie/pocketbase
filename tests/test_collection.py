@@ -97,3 +97,38 @@ async def test_import_collection(superuser_client: PocketBase):
         },
     ]
     await superuser_client.collections.import_collections(data)
+
+
+async def test_truncate(superuser_client: PocketBase):
+    _, name = await create_collection(superuser_client)
+    await superuser_client.collection(name).create({"title": "a" * 12})
+    assert (await superuser_client.collection(name).get_list())["totalItems"] == 1
+    await superuser_client.collections.truncate(name)
+    assert (await superuser_client.collection(name).get_list())["totalItems"] == 0
+
+
+async def test_get_scaffolds(superuser_client: PocketBase):
+    scaffolds = await superuser_client.collections.get_scaffolds()
+    assert {"base", "auth", "view"} <= set(scaffolds)
+    assert scaffolds["auth"]["type"] == "auth"
+
+
+async def test_get_all_oauth2_providers(superuser_client: PocketBase):
+    providers = await superuser_client.collections.get_all_oauth2_providers()
+    names = {p["name"] for p in providers}
+    assert "google" in names
+    assert all(p["displayName"] and p["logo"] for p in providers)
+
+
+async def test_dry_run_view_query(superuser_client: PocketBase):
+    _, name = await create_collection(superuser_client)
+    await superuser_client.collection(name).create({"title": "a" * 12})
+    result = await superuser_client.collections.dry_run_view_query(f"SELECT id, title FROM {name}")
+    assert {f["name"] for f in result["fields"]} == {"id", "title"}
+    assert result["sample"][0]["title"] == "a" * 12
+
+
+async def test_dry_run_view_query_invalid(superuser_client: PocketBase):
+    with pytest.raises(PocketBaseError) as exc:
+        await superuser_client.collections.dry_run_view_query("SELECT nonsense FROM nowhere")
+    assert exc.value.status == 400

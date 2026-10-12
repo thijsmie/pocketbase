@@ -38,7 +38,7 @@ class CrudService(Service, Generic[_T]):
 
     async def get_full_list(self, options: FullListOptions | None = None) -> list[_T]:
         list_options: ListOptions = {}
-        batch = options.get("batch", 500) if options else 500
+        batch = options.get("batch", 1000) if options else 1000
 
         if options:
             list_options.update(options)

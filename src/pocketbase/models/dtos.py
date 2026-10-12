@@ -81,18 +81,28 @@ class HealthCheckResponse(TypedDict):
 
 class AuthProvider(TypedDict):
     name: str
+    displayName: str
+    logo: str
     state: str
     codeVerifier: str
     codeChallenge: str
     codeChallengeMethod: str
-    authUrl: str
+    authURL: str
+    authUrl: str  # deprecated upstream, use authURL
+
+
+class ConfigurableOAuth2Provider(TypedDict):
+    name: str
+    displayName: str
+    logo: str
 
 
 class Oauth2Payload(TypedDict):
     provider: str
     code: str
     codeVerifier: str
-    redirectUrl: str
+    redirectURL: NotRequired[str]
+    redirectUrl: NotRequired[str]  # deprecated upstream, use redirectURL
     createData: NotRequired[dict[str, JsonType]]
 
 
@@ -143,3 +153,21 @@ class AuthMethods(TypedDict):
     oauth2: AuthMethodOauth2
     mfa: AuthMethodMfa
     otp: AuthMethodOtp
+
+
+class DryRunViewResult(TypedDict):
+    fields: list[CollectionField]
+    sample: list[Record]
+
+
+class SQLResultColumn(TypedDict):
+    name: str
+    type: str
+    nullable: bool
+
+
+class SQLResult(TypedDict):
+    execTime: int
+    affectedRows: int
+    columns: list[SQLResultColumn]
+    rows: list[list[JsonType]]
