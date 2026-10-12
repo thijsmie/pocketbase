@@ -1,7 +1,9 @@
 from httpx import AsyncClient, Request, Response
 
+from pocketbase.models.options import CommonOptions
 from pocketbase.services.authorization import AuthStore
 from pocketbase.services.backup import BackupService
+from pocketbase.services.batch import BatchService
 from pocketbase.services.collection import CollectionService
 from pocketbase.services.file import FileService
 from pocketbase.services.health import HealthService
@@ -76,6 +78,10 @@ class PocketBase:
     @property
     def sql(self) -> SQLService:
         return self._sql_service
+
+    def batched(self, options: CommonOptions | None = None) -> BatchService:
+        """Start a new batch of record operations, sent as one transaction when its `async with` block exits."""
+        return BatchService(self, self._inners, options)
 
     def collection(self, id_or_name: str) -> RecordService:
         if id_or_name not in self._collections:

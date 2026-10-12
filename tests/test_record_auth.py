@@ -1,3 +1,4 @@
+import asyncio
 from uuid import uuid4
 
 import pytest
@@ -5,6 +6,7 @@ import pytest
 from pocketbase import PocketBase
 from pocketbase.models.dtos import Record
 from pocketbase.models.errors import PocketBaseError
+from tests.conftest import MessageHandler
 
 
 @pytest.fixture
@@ -55,3 +57,18 @@ async def test_list_auth_methods(client: PocketBase):
     assert isinstance(val["oauth2"]["enabled"], bool)
     assert isinstance(val["oauth2"]["providers"], list)
     assert isinstance(val["mfa"]["enabled"], bool)
+
+
+async def test_request_password_reset(client: PocketBase, user: tuple[str, str], smtp_server: MessageHandler):
+    email = user[0]
+    await client.collection("users").auth.request_password_reset(email)
+    message = await smtp_server.wait_for_message()
+    assert message.rcpt_tos == [email]
+    assert ">Reset password<" in message.content.decode()
+
+
+async def test_request_password_reset_unknown_email(client: PocketBase, smtp_server: MessageHandler):
+    # PocketBase does not reveal whether an email is registered
+    await client.collection("users").auth.request_password_reset(f"{uuid4().hex}@example.com")
+    await asyncio.sleep(0.5)
+    assert smtp_server.messages == []
