@@ -1,3 +1,4 @@
+from collections.abc import AsyncGenerator
 from random import getrandbits
 from uuid import uuid4
 
@@ -9,246 +10,175 @@ from pocketbase.models.dtos import CollectionModel
 
 @pytest.fixture
 async def collection(superuser_client: PocketBase) -> CollectionModel:
-    schema = [
-        {"name": "created", "onCreate": True, "onUpdate": False, "type": "autodate"},
-        {"name": "updated", "onCreate": True, "onUpdate": True, "type": "autodate"},
-        {
-            "name": "title",
-            "type": "text",
-            "required": True,
-        },
-    ]
-    coll = await superuser_client.collections.create(
-        {
-            "name": uuid4().hex,
-            "type": "base",
-            "fields": schema,
-        }
-    )
-    schema.append(
-        {
-            "name": "rel",
-            "type": "relation",
-            "required": False,
-            "collectionId": coll["id"],
-            "cascadeDelete": False,
-            "maxSelect": 1,
-        },
-    )
-    schema.append(
-        {
-            "name": "multirel",
-            "type": "relation",
-            "required": False,
-            "collectionId": coll["id"],
-            "cascadeDelete": False,
-            "maxSelect": 5,
-        },
-    )
-    return await superuser_client.collections.update(coll["id"], {"fields": schema})
-
-
-async def create_file_collection(superuser_client: PocketBase):
-    schema = [
-        {
-            "name": "title",
-            "type": "text",
-            "required": True,
-        },
-        {
-            "name": "image",
-            "type": "file",
-            "required": False,
-            "maxSelect": 3,
-            "maxSize": 5242880,
-            "mimeTypes": [
-                "application/octet-stream",
-                "text/plain",
-            ],
-        },
-    ]
-
     return await superuser_client.collections.create(
         {
             "name": uuid4().hex,
             "type": "base",
-            "fields": schema,
+            "fields": [
+                {"name": "title", "type": "text", "required": True},
+                {"name": "data", "type": "json", "required": False},
+            ],
         }
+    )
+
+
+async def create_file_collection(superuser_client: PocketBase) -> CollectionModel:
+    return await superuser_client.collections.create(
+        {
+            "name": uuid4().hex,
+            "type": "base",
+            "fields": [
+                {"name": "title", "type": "text", "required": True},
+                {
+                    "name": "image",
+                    "type": "file",
+                    "required": False,
+                    "maxSelect": 3,
+                    "maxSize": 5242880,
+                    "mimeTypes": ["application/octet-stream", "text/plain"],
+                },
+            ],
+        }
+    )
+
+
+async def set_batch_enabled(superuser_client: PocketBase, enabled: bool) -> None:
+    await superuser_client.settings.update(
+        body={"batch": {"enabled": enabled, "maxRequests": 50, "timeout": 3, "maxBodySize": 0}}
     )
 
 
 @pytest.fixture
-async def activate_batch_api(superuser_client: PocketBase):
-    await superuser_client.settings.update(
-        body={
-            "batch": {"enabled": True, "maxRequests": 50, "timeout": 3, "maxBodySize": 0},
-        }
-    )
+async def batch_api(superuser_client: PocketBase) -> AsyncGenerator[None, None]:
+    await set_batch_enabled(superuser_client, True)
+    yield
+    await set_batch_enabled(superuser_client, False)
 
 
-async def test_create_record_batch_without_batch_api(superuser_client: PocketBase, collection: CollectionModel):
-    bname = uuid4().hex
-    bname_2 = uuid4().hex
+async def test_batch_api_disabled(superuser_client: PocketBase, collection: CollectionModel):
+    await set_batch_enabled(superuser_client, False)
+    with pytest.raises(PocketBaseError) as exc:
+        async with superuser_client.batched() as batch:
+            batch.collection(collection["id"]).create({"title": uuid4().hex})
+    assert exc.value.status == 403
+
+    assert await superuser_client.collection(collection["id"]).get_full_list() == []
+
+
+async def test_create_records(superuser_client: PocketBase, collection: CollectionModel, batch_api):
+    titles = [uuid4().hex for _ in range(10)]
     async with superuser_client.batched() as batch:
         col = batch.collection(collection["id"])
-        col.create(
-            {
-                "title": bname,
-            }
-        )
-        col.create(
-            {
-                "title": bname_2,
-            }
-        )
+        for title in titles:
+            col.create({"title": title, "data": {"nested": [1, 2, 3]}})
 
-        with pytest.raises(PocketBaseError) as exc:
-            _ = await batch.send()
-            assert exc.value.status == 403  # batch API is not enabled
+    assert [r["status"] for r in batch.results] == [200] * 10
+    assert [r["body"]["title"] for r in batch.results] == titles
+    records = await superuser_client.collection(collection["id"]).get_full_list()
+    assert sorted(r["title"] for r in records) == sorted(titles)
+    assert all(r["data"] == {"nested": [1, 2, 3]} for r in records)
 
 
-async def test_create_record_batch(superuser_client: PocketBase, collection: CollectionModel, activate_batch_api):
-    bname = uuid4().hex
-    bname_2 = uuid4().hex
-    col_id = collection["id"]
-    async with superuser_client.batched() as batch:
-        col = batch.collection(col_id)
-        col.create(
-            {
-                "title": bname,
-            }
-        )
-        col.create(
-            {
-                "title": bname_2,
-            }
-        )
-
-        result = await batch.send()
-
-    assert len(result) == 2
-    assert result[0]["body"]["title"] == bname
+async def test_upsert_update_delete(superuser_client: PocketBase, collection: CollectionModel, batch_api):
     col = superuser_client.collection(collection["id"])
-    assert result[0]["body"] == await col.get_first()
-
-
-async def test_create_multiple_record_batch(
-    superuser_client: PocketBase, collection: CollectionModel, activate_batch_api
-):
-    col_unbatched = superuser_client.collection(collection["id"])
-    async with superuser_client.batched() as batch:
-        col_id = collection["id"]
-        col = batch.collection(col_id)
-
-        for _ in range(10):
-            col.create(
-                {
-                    "title": uuid4().hex,
-                }
-            )
-
-        await batch.send()
-
-    # expansion
-
-    rel = await col_unbatched.get_full_list()
-
-    assert len(rel) == 10
-
-
-async def test_create_update_delete_batch(
-    superuser_client: PocketBase, collection: CollectionModel, activate_batch_api
-):
-    col_unbatched = superuser_client.collection(collection["id"])
+    existing = await col.create({"title": uuid4().hex})
+    to_delete = await col.create({"title": uuid4().hex})
+    new_id = uuid4().hex[:15]
 
     async with superuser_client.batched() as batch:
-        col_id = collection["id"]
-        col = batch.collection(col_id)
+        sub = batch.collection(collection["id"])
+        sub.update(existing["id"], {"title": "updated"})
+        sub.upsert({"id": new_id, "title": "upserted"})
+        sub.delete(to_delete["id"])
 
-        # create
-        record = await col_unbatched.create(
-            {
-                "title": uuid4().hex,
-            }
-        )
-        # update
-        col.update(record["id"], {"title": "updated"})
-        # delete
-        col.delete(record["id"])
-
-        result = await batch.send()
-
-    assert len(result) == 2
-    assert result[0]["body"]["title"] == "updated"
-    assert result[1]["status"] == 204  # delete should return 204 No Content
-
+    assert [r["status"] for r in batch.results] == [200, 200, 204]
+    assert (await col.get_one(existing["id"]))["title"] == "updated"
+    assert (await col.get_one(new_id))["title"] == "upserted"
     with pytest.raises(PocketBaseError) as exc:
-        _ = await col_unbatched.get_one(record["id"])
-        assert exc.value.status == 404  # record should be deleted
+        await col.get_one(to_delete["id"])
+    assert exc.value.status == 404
 
 
-async def test_batch_with_files(superuser_client: PocketBase, activate_batch_api):
+async def test_failed_request_rolls_back(superuser_client: PocketBase, collection: CollectionModel, batch_api):
+    with pytest.raises(PocketBaseError) as exc:
+        async with superuser_client.batched() as batch:
+            sub = batch.collection(collection["id"])
+            sub.create({"title": uuid4().hex})
+            sub.create({})  # title is required
+    assert exc.value.status == 400
+
+    assert await superuser_client.collection(collection["id"]).get_full_list() == []
+    with pytest.raises(RuntimeError):
+        async with batch:
+            pass
+
+
+async def test_exception_in_block_sends_nothing(superuser_client: PocketBase, collection: CollectionModel, batch_api):
+    with pytest.raises(ZeroDivisionError):
+        async with superuser_client.batched() as batch:
+            batch.collection(collection["id"]).create({"title": uuid4().hex})
+            _ = 1 / 0
+
+    assert await superuser_client.collection(collection["id"]).get_full_list() == []
+    with pytest.raises(RuntimeError):
+        _ = batch.results
+
+
+async def test_empty_batch(superuser_client: PocketBase):
+    async with superuser_client.batched() as batch:
+        pass
+    assert batch.results == []
+
+
+async def test_batch_scope_is_enforced(superuser_client: PocketBase, collection: CollectionModel, batch_api):
+    batch = superuser_client.batched()
+    with pytest.raises(RuntimeError):
+        batch.collection(collection["id"]).create({"title": uuid4().hex})
+    with pytest.raises(RuntimeError):
+        _ = batch.results
+
+    async with batch:
+        sub = batch.collection(collection["id"])
+        sub.create({"title": uuid4().hex})
+
+    with pytest.raises(RuntimeError):
+        sub.create({"title": uuid4().hex})
+    with pytest.raises(RuntimeError):
+        async with batch:
+            pass
+    assert len(batch.results) == 1
+
+
+async def test_batches_are_independent(superuser_client: PocketBase, collection: CollectionModel, batch_api):
+    async with superuser_client.batched() as first, superuser_client.batched() as second:
+        first.collection(collection["id"]).create({"title": "first"})
+        second.collection(collection["id"]).create({"title": "second"})
+
+    assert [r["body"]["title"] for r in first.results] == ["first"]
+    assert [r["body"]["title"] for r in second.results] == ["second"]
+
+
+async def test_batch_with_files(superuser_client: PocketBase, batch_api):
     coll = await create_file_collection(superuser_client)
-    col_id = coll["id"]
-    col_unbatched = superuser_client.collection(coll["id"])
-    name1 = uuid4().hex
-    name2 = uuid4().hex
-    name3 = uuid4().hex
+    name = uuid4().hex
     acontent = uuid4().hex
     bcontent = getrandbits(1024 * 8).to_bytes(1024, "little")
-    ccontent = uuid4().hex
 
     async with superuser_client.batched() as batch:
-        col = batch.collection(col_id)
+        col = batch.collection(coll["id"])
         col.create(
             {
                 "title": uuid4().hex,
                 "image": FileUpload(
-                    (name1 + ".txt", acontent, "text/plain"),
-                    (name2 + ".txt", bcontent, "application/octet-stream"),
-                    (name3 + ".txt", ccontent, "text/plain"),
+                    (name + "a.txt", acontent, "text/plain"),
+                    (name + "b.txt", bcontent, "application/octet-stream"),
                 ),
             }
         )
-        col.create({"title": uuid4().hex, "image": FileUpload((name1 + ".txt", acontent, "text/plain"))})
-        result = await batch.send()
-    assert len(result) == 2
-    assert len(result[0]["body"]["image"]) == 3
-    for fn in result[0]["body"]["image"]:
-        if fn.startswith(name2):
-            break
-    rel = await col_unbatched.get_one(result[0]["body"]["id"])
-    assert len(rel["image"]) == 3
+        col.create({"title": uuid4().hex, "image": FileUpload((name + "c.txt", acontent, "text/plain"))})
 
-
-async def test_batch_iteration(superuser_client: PocketBase, collection: CollectionModel, activate_batch_api):
-    col_unbatched = superuser_client.collection(collection["id"])
-    col_id = collection["id"]
-
-    # create 10 records
-    async with superuser_client.batched() as batch:
-        col = batch.collection(col_id)
-        for i in range(10):
-            col.create(
-                {
-                    "title": f"record {i}",
-                }
-            )
-        await batch.send()
-
-    async with superuser_client.batched() as batch:
-        col = batch.collection(col_id)
-
-        # create 10 more records
-        for i in range(10, 20):
-            col.create(
-                {
-                    "title": f"record {i}",
-                }
-            )
-        await batch.send()
-
-    # iterate over all records
-    items = await col_unbatched.get_full_list()
-
-    assert len(items) == 20
+    first, second = (r["body"] for r in batch.results)
+    assert len(first["image"]) == 2
+    assert len(second["image"]) == 1
+    binary = next(fn for fn in first["image"] if fn.startswith(name + "b"))
+    assert await superuser_client.files.download_file(coll["id"], first["id"], binary) == bcontent

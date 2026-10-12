@@ -31,12 +31,10 @@ class Service:
 
         return response
 
-    async def _send(self, path: str, options: SendOptions, expect_json: bool = True) -> JsonType | None:
+    async def _send(self, path: str, options: SendOptions) -> JsonType:
         response = await self._send_raw(path, options)
         PocketBaseError.raise_for_status(response)
 
-        if not expect_json:
-            return None
         try:
             return response.json()
         except ValueError as e:

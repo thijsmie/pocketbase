@@ -1,7 +1,9 @@
 import json
-from typing import TYPE_CHECKING, Any, Literal, TypedDict
-from urllib.parse import quote
+from types import TracebackType
+from typing import TYPE_CHECKING, Any, Literal, TypedDict, cast
+from urllib.parse import quote, urlencode
 
+from pocketbase.models.errors import PocketBaseError
 from pocketbase.models.options import CommonOptions, SendOptions
 from pocketbase.services.base import Service
 from pocketbase.utils.types import BodyDict, JsonType, SendableFiles, transform
@@ -13,131 +15,146 @@ if TYPE_CHECKING:
 class BatchRequest(TypedDict, total=False):
     url: str
     method: Literal["GET", "POST", "PUT", "PATCH", "DELETE"]
-    headers: dict[str, str] | None
+    headers: dict[str, str]
     body: BodyDict
 
 
-class BatchRequestResult(TypedDict, total=False):
+class BatchRequestResult(TypedDict):
     status: int
-    body: BodyDict
+    body: JsonType
 
 
 class BatchService(Service):
-    __base_sub_path__: str = "/api/batch"
     """
-    Service for batching multiple PocketBase API requests into a single `/api/batch` call.
+    Collects record operations and sends them as a single transactional `/api/batch` call.
+
+    Use it as an async context manager; the queued operations are sent when the block exits
+    without an exception, and the per-request results are available on `results` afterwards.
+    If any operation fails, none are applied. The batch API must be enabled in the PocketBase
+    settings, and a batch may not hold more operations than its `maxRequests` setting allows.
+
+        async with pb.batched() as batch:
+            batch.collection("posts").create({"title": "Hello"})
+            batch.collection("posts").delete("RECORD_ID")
+        batch.results[0]["body"]["title"]
     """
 
-    def __init__(self, pocketbase: "PocketBase", inners: "PocketBaseInners") -> None:
+    __base_sub_path__: str = "/api/batch"
+
+    def __init__(
+        self, pocketbase: "PocketBase", inners: "PocketBaseInners", options: CommonOptions | None = None
+    ) -> None:
         super().__init__(pocketbase, inners)
+        self._options = options
         self._requests: list[BatchRequest] = []
         self._subs: dict[str, SubBatchService] = {}
+        self._open = False
+        self._used = False
+        self._results: list[BatchRequestResult] | None = None
 
-    # we can use it with `async with` syntax
     async def __aenter__(self) -> "BatchService":
+        if self._used:
+            raise RuntimeError("A batch can only be used once, create a new one with PocketBase.batched()")
+        self._open = self._used = True
         return self
 
     async def __aexit__(
         self,
         exc_type: type[BaseException] | None,
         exc: BaseException | None,
-        tb: Any,
+        tb: TracebackType | None,
     ) -> None:
-        return None
+        self._open = False
+        try:
+            # On an exception nothing has been sent yet, so dropping the queue leaves the database untouched.
+            if exc_type is None:
+                self._results = await self._send_batch() if self._requests else []
+        finally:
+            self._requests.clear()
 
-    def collection(self, collection_name: str) -> "SubBatchService":
-        """
-        Begin building a batch for the given collection.
+    @property
+    def results(self) -> list[BatchRequestResult]:
+        """The result of each queued request, in order. Available once the `async with` block has exited."""
+        if self._results is None:
+            raise RuntimeError("Batch results are only available after the `async with` block has exited")
+        return self._results
 
-        Returns a `SubBatchService` to queue CRUD operations.
-        """
-        if collection_name not in self._subs:
-            self._subs[collection_name] = SubBatchService(
-                self._requests,
-                collection_name,
-            )
-        return self._subs[collection_name]
+    def collection(self, id_or_name: str) -> "SubBatchService":
+        """Queue record operations on the given collection."""
+        if id_or_name not in self._subs:
+            self._subs[id_or_name] = SubBatchService(self, id_or_name)
+        return self._subs[id_or_name]
 
-    async def send(self, options: CommonOptions | None = None) -> list[BatchRequestResult]:
-        send_opts: SendOptions = {
-            "method": "POST",
-        }
+    def _submit_request(self, request: BatchRequest) -> None:
+        if not self._open:
+            raise RuntimeError("Batch operations can only be queued inside an `async with pb.batched()` block")
+        self._requests.append(request)
 
-        if options:
-            send_opts.update(options)
-
-        # building the request body
-        json_data = []
-        all_files: SendableFiles = []
+    async def _send_batch(self) -> list[BatchRequestResult]:
+        requests: list[JsonType] = []
+        files: SendableFiles = []
 
         for idx, req in enumerate(self._requests):
-            body_transformed, files = transform(req.get("body", {}))
-            json_data.append(
-                {
-                    "method": req["method"],
-                    "url": req["url"],
-                    "headers": req.get("headers"),
-                    "body": body_transformed,
-                }
-            )
-            if files:
-                for key, file in files:  # type: ignore
-                    updated_key = f"requests.{idx}.{key}"
-                    all_files.append((updated_key, file))
+            body, request_files = transform(req["body"])
+            request: dict[str, JsonType] = {"method": req["method"], "url": req["url"], "body": body}
+            if "headers" in req:
+                request["headers"] = req["headers"]  # type: ignore[assignment]
+            requests.append(request)
+            files.extend((f"requests.{idx}.{key}", file) for key, file in request_files)  # type: ignore[misc]
 
-        send_opts["body"] = {"@jsonPayload": json.dumps({"requests": json_data})}
-        if len(all_files) == 0:
-            # add dummy files to trigger multipart encoding
-            # easiest way to trigger multipart/form-data encoding
-            # this key will be ignored by PocketBase
-            # https://github.com/pocketbase/js-sdk/blob/b17fd45624a86d69b56163da6e8a519f533a1f22/src/services/BatchService.ts#L71
-            all_files.append(("dummy.txt", b"mamaistdiebeste"))
-        send_opts["files"] = all_files
+        send_options: SendOptions = {"method": "POST"}
+        if self._options:
+            send_options.update(self._options)
 
-        result_request: list[JsonType] = await self._send("", send_opts)  #  type: ignore
-        result = []
-        for item in result_request:
-            result_item: BatchRequestResult = {
-                "status": item["status"],  #  type: ignore
-                "body": item.get("body", {}),  #  type: ignore
-            }
-            result.append(result_item)
-        self._requests.clear()
-        return result
+        if files:
+            # Files can only be sent as multipart/form-data, which carries the JSON part in `@jsonPayload`.
+            send_options["body"] = {"@jsonPayload": json.dumps({"requests": requests})}
+            send_options["files"] = files
+        else:
+            send_options["body"] = {"requests": requests}
+
+        response = await self._send("", send_options)
+        if not isinstance(response, list):
+            raise PocketBaseError(self._build_url(""), 200, "PocketBase returned an unexpected batch response")
+
+        items = cast(list[dict[str, Any]], response)
+        return [{"status": item["status"], "body": item.get("body")} for item in items]
 
 
 class SubBatchService:
-    """
-    Helper to queue CRUD ops for a specific collection into the batch.
-    """
+    """Queues record operations on one collection into its parent batch."""
 
-    def __init__(self, requests: list[BatchRequest], collection: str) -> None:
-        self._requests = requests
+    def __init__(self, batch: BatchService, collection: str) -> None:
+        self._batch = batch
         self._collection = collection
 
+    def _records_url(self, record_id: str | None = None) -> str:
+        url = f"/api/collections/{quote(self._collection)}/records"
+        return f"{url}/{quote(record_id)}" if record_id is not None else url
+
+    def _submit(
+        self,
+        method: Literal["POST", "PUT", "PATCH", "DELETE"],
+        url: str,
+        body: BodyDict,
+        options: CommonOptions | None,
+    ) -> None:
+        if options and options.get("params"):
+            url = f"{url}?{urlencode(options['params'])}"
+        request: BatchRequest = {"method": method, "url": url, "body": body}
+        if options and "headers" in options:
+            request["headers"] = options["headers"]
+        self._batch._submit_request(request)
+
     def create(self, params: BodyDict, options: CommonOptions | None = None) -> None:
-        req: BatchRequest = {
-            "method": "POST",
-            "url": f"/api/collections/{quote(self._collection)}/records",
-            "body": params,
-            "headers": options.get("headers", None) if options else None,
-        }
-        self._requests.append(req)
+        self._submit("POST", self._records_url(), params, options)
+
+    def upsert(self, params: BodyDict, options: CommonOptions | None = None) -> None:
+        """Update the record whose `id` is in `params`, or create it if it does not exist."""
+        self._submit("PUT", self._records_url(), params, options)
 
     def update(self, record_id: str, params: BodyDict, options: CommonOptions | None = None) -> None:
-        req: BatchRequest = {
-            "method": "PATCH",
-            "url": (f"/api/collections/{quote(self._collection)}/records/{quote(record_id)}"),
-            "body": params,
-            "headers": options.get("headers", None) if options else None,
-        }
-        self._requests.append(req)
+        self._submit("PATCH", self._records_url(record_id), params, options)
 
     def delete(self, record_id: str, options: CommonOptions | None = None) -> None:
-        req: BatchRequest = {
-            "method": "DELETE",
-            "url": (f"/api/collections/{quote(self._collection)}/records/{quote(record_id)}"),
-            "body": {},
-            "headers": options.get("headers", None) if options else None,
-        }
-        self._requests.append(req)
+        self._submit("DELETE", self._records_url(record_id), {}, options)
