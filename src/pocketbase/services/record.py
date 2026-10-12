@@ -163,4 +163,4 @@ class RecordAuthService(Service):
         if options:
             send_options.update(options)
 
-        await self._send("/request-password-reset", send_options, expect_json=False)
+        await self._send_noreturn("/request-password-reset", send_options)

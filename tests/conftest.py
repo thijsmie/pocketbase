@@ -1,3 +1,4 @@
+import asyncio
 import secrets
 import socket
 from collections.abc import AsyncGenerator, Generator
@@ -9,6 +10,7 @@ from time import sleep
 import httpx
 import pytest
 from aiosmtpd.controller import Controller
+from aiosmtpd.smtp import Envelope
 
 from pocketbase import PocketBase
 from tests.prep import ensure_pocketbase_executable
@@ -17,37 +19,31 @@ SMTP_HOST = "localhost"
 
 
 class MessageHandler:
-    def __init__(self):
-        self.messages = []
+    def __init__(self) -> None:
+        self.messages: list[Envelope] = []
 
-    async def handle_DATA(self, _server, _session, envelope):
+    async def handle_DATA(self, _server, _session, envelope: Envelope) -> str:
         self.messages.append(envelope)
         return "250 Message accepted for delivery"
 
+    async def wait_for_message(self, timeout: float = 5.0) -> Envelope:
+        async with asyncio.timeout(timeout):
+            while not self.messages:
+                await asyncio.sleep(0.05)
+        return self.messages[-1]
 
-@pytest.fixture(scope="function")
-async def smtp_server(superuser_client: PocketBase, port_smtp: int) -> AsyncGenerator[MessageHandler, None, None]:
+
+@pytest.fixture
+async def smtp_server(superuser_client: PocketBase, port_smtp: int) -> AsyncGenerator[MessageHandler, None]:
     handler = MessageHandler()
     controller = Controller(handler, hostname=SMTP_HOST, port=port_smtp)
     controller.start()
-
-    await superuser_client._settings.update(
-        body={
-            "smtp": {
-                "enabled": True,
-                "host": SMTP_HOST,
-                "port": port_smtp,
-            }
-        }
-    )
+    await superuser_client.settings.update(body={"smtp": {"enabled": True, "host": SMTP_HOST, "port": port_smtp}})
 
     try:
-        yield {
-            "host": SMTP_HOST,
-            "port": port_smtp,
-            "handler": handler,
-        }
+        yield handler
     finally:
+        await superuser_client.settings.update(body={"smtp": {"enabled": False}})
         controller.stop()
 
 
