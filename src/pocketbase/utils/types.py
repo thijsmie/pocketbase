@@ -18,6 +18,7 @@ BodyDict: TypeAlias = dict[str, BodyField]
 
 def transform(data: BodyDict) -> tuple[dict[str, JsonType], SendableFiles]:
     files: SendableFiles = []
+    data = dict(data)
 
     for key, value in list(data.items()):
         if isinstance(value, datetime):
